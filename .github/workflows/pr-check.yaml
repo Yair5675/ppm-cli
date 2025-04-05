@@ -1,0 +1,19 @@
+name: PPM-CLI PR Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+      - name: Build
+        run: cargo build --release --verbose
+      - name: Test
+        run: cargo test --verbose
+      - name: Linter
+        run: cargo clippy -- -Dwarnings

@@ -51,4 +51,14 @@ impl FenwickTree {
         }
         sum
     }
+
+    /// Adds a certain amount to an index in the tree in **O(log n)** time complexity.
+    pub fn add(&mut self, mut index: usize, amount: CalculationsType) {
+        // Shift the index by one since the fenwick tree is 1-based:
+        index += 1;
+        while index < self.data.len() {
+            self.data[index] += amount;
+            index += lsb(index);
+        }
+    }
 }

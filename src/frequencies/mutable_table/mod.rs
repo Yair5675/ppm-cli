@@ -77,10 +77,31 @@ impl FrequencyTable for MutableFrequencyTable {
     }
 
     fn get_index(&self, cumulative_frequency: Frequency) -> Option<usize> {
-        todo!()
+        // Implement binary search (get_sum doesn't include the index so only decrement 1 from len):
+        let (mut left, mut right) = (0, self.fenwick.len() - 1);
+        let cumulative_frequency = *cumulative_frequency;
+
+        while left <= right {
+            let middle = (left + right) >> 1;
+
+            // Check lower bound:
+            if cumulative_frequency < self.fenwick.get_sum(middle) {
+                right = middle - 1;
+            }
+            // Check upper bound:
+            else if cumulative_frequency >= self.fenwick.get_sum(middle + 1) {
+                left = middle + 1;
+            }
+            // Spot on!
+            else {
+                return Some(middle);
+            }
+        }
+
+        None
     }
 
     fn get_total(&self) -> Frequency {
-        todo!()
+        self.total
     }
 }

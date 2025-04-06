@@ -1,3 +1,4 @@
+mod bit_iter;
 #[cfg(test)]
 mod unit_tests;
 

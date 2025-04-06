@@ -1,4 +1,5 @@
-use crate::bit_buffer::BitBuffer;
+use super::bit_iter::BitIterator;
+use super::BitBuffer;
 
 #[test]
 fn empty_upon_initializing() {
@@ -298,4 +299,83 @@ fn test_from_single_byte() {
     let bytes: Vec<u8> = buffer.get_complete_bytes().collect();
     assert_eq!(bytes, vec![0b10101010]);
     assert!(buffer.full_bytes.is_empty());
+}
+
+#[test]
+fn test_bit_iterator_empty() {
+    let buffer = BitBuffer::new();
+    let bit_iterator: BitIterator = buffer.into();
+
+    let bits: Vec<bool> = bit_iterator.collect();
+    assert!(bits.is_empty());
+}
+
+#[test]
+fn test_bit_iterator_less_than_byte() {
+    let mut buffer = BitBuffer::new();
+    buffer.append(true);
+    buffer.append(false);
+    buffer.append(true);
+
+    let bit_iterator: BitIterator = buffer.into();
+
+    let expected_bits = vec![true, false, true];
+    let bits: Vec<bool> = bit_iterator.collect();
+    assert_eq!(bits, expected_bits);
+}
+
+#[test]
+fn test_bit_iterator_exactly_one_byte() {
+    let mut buffer = BitBuffer::new();
+    buffer.append(true);
+    buffer.append(false);
+    buffer.append(true);
+    buffer.append(true);
+    buffer.append(false);
+    buffer.append(true);
+    buffer.append(false);
+    buffer.append(true);
+
+    let bit_iterator: BitIterator = buffer.into();
+
+    let expected_bits = vec![true, false, true, true, false, true, false, true];
+    let bits: Vec<bool> = bit_iterator.collect();
+    assert_eq!(bits, expected_bits);
+}
+
+#[test]
+fn test_bit_iterator_multiple_bytes() {
+    let mut buffer = BitBuffer::new();
+    buffer.append_repeated(true, 8);
+    buffer.append_repeated(true, 8);
+    buffer.append_repeated(false, 8);
+    buffer.append_repeated(true, 8);
+
+    let bit_iterator: BitIterator = buffer.into();
+
+    let expected_bits = vec![
+        true, true, true, true, true, true, true, true, // First byte
+        true, true, true, true, true, true, true, true, // Second byte
+        false, false, false, false, false, false, false, false, // Third byte
+        true, true, true, true, true, true, true, true, // Fourth byte
+    ];
+
+    let bits: Vec<bool> = bit_iterator.collect();
+    assert_eq!(bits.len(), 8 * 4);
+    assert_eq!(bits, expected_bits);
+}
+
+#[test]
+fn test_bit_iterator_from_slice() {
+    let byte_slice = vec![0b10101010u8, 0b11001100u8]; // 10101010 11001100
+    let bit_iterator: BitIterator = BitIterator::from(byte_slice);
+
+    let expected_bits = vec![
+        true, false, true, false, true, false, true, false, // First byte
+        true, true, false, false, true, true, false, false, // Second byte
+    ];
+
+    let bits: Vec<bool> = bit_iterator.collect();
+    assert_eq!(bits.len(), 8 * 2);
+    assert_eq!(bits, expected_bits);
 }

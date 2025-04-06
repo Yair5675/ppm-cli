@@ -1,6 +1,3 @@
-use crate::frequencies::mutable_table::fenwick::FenwickTree;
-use crate::frequencies::Frequency;
-
 // PPM-CLI: A Command-Line Interface for compressing data using Arithmetic Coding + Prediction by
 // Partial Matching
 // Copyright (C) 2025  Yair Ziv
@@ -17,7 +14,11 @@ use crate::frequencies::Frequency;
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 mod fenwick;
+
+use self::fenwick::FenwickTree;
+use super::{Cfi, Frequency, FrequencyTable};
 
 use anyhow::{Context, Result};
 
@@ -44,9 +45,10 @@ impl MutableFrequencyTable {
 
         for frequency in frequencies.iter() {
             accum = Frequency::new(*accum + **frequency).context(format!(
-                "Failed to create mutable table, index {} caused an overflow", current_idx - 1
+                "Failed to create mutable table, index {} caused an overflow",
+                current_idx - 1
             ))?;
-            
+
             fenwick.add(current_idx, *accum);
             current_idx += 1;
         }
@@ -55,5 +57,30 @@ impl MutableFrequencyTable {
             fenwick,
             total: accum,
         })
+    }
+}
+
+impl FrequencyTable for MutableFrequencyTable {
+    fn get_cfi(&self, index: usize) -> Option<Cfi> {
+        if index < self.fenwick.len() - 1 {
+            Some(Cfi {
+                // Invariants ensure unwrapping frequencies is safe:
+                start: Frequency::new(self.fenwick.get_sum(index))
+                    .expect("MutableFrequencyTable invariant violated"),
+                end: Frequency::new(self.fenwick.get_sum(index + 1))
+                    .expect("MutableFrequencyTable invariant violated"),
+                total: self.total,
+            })
+        } else {
+            None
+        }
+    }
+
+    fn get_index(&self, cumulative_frequency: Frequency) -> Option<usize> {
+        todo!()
+    }
+
+    fn get_total(&self) -> Frequency {
+        todo!()
     }
 }

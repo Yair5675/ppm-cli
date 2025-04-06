@@ -64,14 +64,14 @@ impl FrequencyTable for StaticFrequencyTable {
             })
     }
 
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
-        // Use binary search since all frequencies are non-negative and therefor all cumulative 
+    fn get_index(&self, cumulative_frequency: Frequency) -> Option<usize> {
+        // Use binary search since all frequencies are non-negative and therefor all cumulative
         // frequencies are sorted:
         let (mut left, mut right) = (0, self.cum_freqs.len() - 1);
 
         while left < right {
             let middle = (left + right) >> 1;
-            
+
             // Check lower bound:
             if cumulative_frequency < self.cum_freqs[middle] {
                 right = middle - 1;
@@ -85,7 +85,7 @@ impl FrequencyTable for StaticFrequencyTable {
                 return Some(middle);
             }
         }
-        
+
         None
     }
 

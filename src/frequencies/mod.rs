@@ -40,7 +40,7 @@ pub trait FrequencyTable {
 
     /// Given a cumulative frequency value, return the index whose assigned CFI contains the value.
     /// If such CFI is not found, None is returned.
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize>;
+    fn get_index(&self, cumulative_frequency: Frequency) -> Option<usize>;
 
     /// Returns the total cumulative number of frequencies saved in the table.
     fn get_total(&self) -> Frequency;

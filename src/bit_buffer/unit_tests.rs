@@ -135,6 +135,25 @@ fn test_over_one_byte_appends_repeated() {
 }
 
 #[test]
+fn test_len_empty() {
+    let buffer = BitBuffer::new();
+    assert_eq!(buffer.len(), 0);
+}
+
+#[test]
+fn test_len_less_than_byte() {
+    let mut buffer = BitBuffer::new();
+    buffer.append_repeated(false, 5);
+    assert_eq!(buffer.len(), 5);
+}
+
+#[test]
+fn test_len_multiple_bytes() {
+    let buffer = BitBuffer::from(vec![100, 11, 23, 45, 68, 19]);
+    assert_eq!(buffer.len(), 8 * 6);
+}
+
+#[test]
 fn test_full_bytes_new_buffer() {
     let mut buffer = BitBuffer::new();
     let bytes: Vec<u8> = buffer.get_complete_bytes().collect();
@@ -313,7 +332,7 @@ fn test_leftover_less_than_byte() {
     buffer.append(true);
     buffer.append(false);
     buffer.append(true);
-    
+
     let leftover = buffer.get_leftover_bits();
     assert!(leftover.is_some());
     assert_eq!(leftover.unwrap(), 0b10100000);
@@ -322,7 +341,7 @@ fn test_leftover_less_than_byte() {
 #[test]
 fn test_leftover_exactly_one_byte() {
     let buffer = BitBuffer::from(vec![0b10011010u8]);
-    
+
     let leftover = buffer.get_leftover_bits();
     assert!(leftover.is_none());
 }
@@ -331,13 +350,13 @@ fn test_leftover_exactly_one_byte() {
 fn test_leftover_byte_with_remainder() {
     let mut buffer = BitBuffer::from(vec![0b10011010u8]);
     buffer.append(false);
-    
+
     let leftover = buffer.get_leftover_bits();
     assert!(leftover.is_some());
     assert_eq!(leftover.unwrap(), 0);
 }
 
-#[test] 
+#[test]
 fn test_leftover_multiple_bytes_no_remainder() {
     let buffer = BitBuffer::from(vec![15, 120u8, 11, 33]);
 

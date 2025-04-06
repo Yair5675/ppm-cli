@@ -44,7 +44,7 @@ impl Symbol {
     /// Maps a symbol to an index. It is guaranteed that if two symbols are not the same, they will
     /// never receive the same index, and that the returned index is within the interval
     /// `[0, UNIQUE_SYMBOLS_AMOUNT)`.
-    pub const fn to_index(&self) -> usize {
+    pub const fn get_index(&self) -> usize {
         match self {
             Symbol::Byte(byte) => *byte as usize,
             Symbol::Eof => 256,

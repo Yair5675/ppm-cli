@@ -51,6 +51,11 @@ impl FenwickTree {
         }
         sum
     }
+    
+    /// Returns the length of the tree, i.e: how many elements it contains
+    pub fn len(&self) -> usize {
+        self.data.len() - 1
+    }
 
     /// Adds a certain amount to an index in the tree in **O(log n)** time complexity.
     pub fn add(&mut self, mut index: usize, amount: CalculationsType) {

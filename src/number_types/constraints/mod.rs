@@ -1,9 +1,42 @@
-use thiserror::Error;
+#[cfg(test)]
+mod unit_tests;
+
 use super::sizes::CalculationsType;
+use thiserror::Error;
+
+/// Returns the number of bits used by a number
+const fn get_used_bits_num(n: CalculationsType) -> u32 {
+    CalculationsType::BITS - n.leading_zeros()
+}
 
 /// A numerical struct restricting the value it holds to have a limited amount of bits
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct ConstrainedNum<const BITS: u32>(CalculationsType);
+
+impl<const BITS: u32> ConstrainedNum<BITS> {
+    /// Creates a new ConstrainedNum.
+    ///
+    /// ## Rules:
+    /// The BITS assigned to it must be between 1 and CalculationsType::BITS (inclusively), and the
+    /// given value cannot use more bits than BITS.<br>
+    /// If one of those rules is broken, an appropriate error is returned.
+    pub fn new(value: CalculationsType) -> Result<Self, BitsConstraintError<BITS>> {
+        // Check BITS:
+        if BITS == 0 {
+            return Err(BitsConstraintError::ZeroBitsGiven);
+        } else if BITS > CalculationsType::BITS {
+            return Err(BitsConstraintError::BitsConstantTooLarge);
+        }
+
+        // Check value:
+        let used_bits = get_used_bits_num(value);
+        if used_bits > BITS {
+            Err(BitsConstraintError::ValueUsesTooManyBits { value, used_bits })
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum BitsConstraintError<const BITS: u32> {

@@ -58,6 +58,18 @@ impl MutableFrequencyTable {
             total: accum,
         })
     }
+    
+    /// Adds a certain amount to the frequency at the given index in the table.
+    /// 
+    /// If the result of that addition exceeds the bits allowed for a frequency, it is not saved in
+    /// the table.
+    pub fn add_frequency(&mut self, index: usize, amount: Frequency) {
+        // Since `total` is the largest, if adding to it fails adding to anything else will too:
+        if let Ok(new_total) = Frequency::new(*self.total + *amount) {
+            self.total = new_total;
+            self.fenwick.add(index, *amount);
+        }
+    }
 }
 
 impl FrequencyTable for MutableFrequencyTable {

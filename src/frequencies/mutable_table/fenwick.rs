@@ -37,7 +37,18 @@ impl FenwickTree {
         // Fenwick trees index calculations depend on the indices starting at 1, so add an extra
         // element to ensure this:
         Self {
-            data: vec![0; size + 1].into_boxed_slice()
+            data: vec![0; size + 1].into_boxed_slice(),
         }
+    }
+
+    /// Computes the cumulative sum of all values up to (but not including) the given index.<br>
+    /// This function's time complexity is **O(log n)**.
+    pub fn get_sum(&self, mut index: usize) -> CalculationsType {
+        let mut sum = 0;
+        while 0 < index && index < self.data.len() {
+            sum += self.data[index];
+            index -= lsb(index);
+        }
+        sum
     }
 }

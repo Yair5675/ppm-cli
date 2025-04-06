@@ -60,4 +60,12 @@ impl BitBuffer {
         self.current_byte = 0;
         self.current_idx = 0;
     }
+    
+    /// Extracts full bytes from the buffer and returns them as an iterator. If there aren't enough
+    /// bits in the buffer to form a single byte, the iterator will be empty.<br>
+    /// To remove ambiguity: **The bytes will not remain in the buffer after calling this
+    /// function**.
+    pub fn get_complete_bytes(&mut self) -> impl Iterator<Item = u8> {
+        std::mem::take(&mut self.full_bytes).into_iter()
+    }
 }

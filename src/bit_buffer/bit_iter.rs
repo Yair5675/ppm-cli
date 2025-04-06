@@ -10,7 +10,7 @@ pub struct BitIterator<'a> {
     incomplete_byte: Option<(u8, usize)>,
 }
 
-impl<'a> Iterator for BitIterator<'a> {
+impl Iterator for BitIterator<'_> {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -48,7 +48,7 @@ impl<'a> Iterator for BitIterator<'a> {
     }
 }
 
-impl<'a> From<BitBuffer> for BitIterator<'a> {
+impl From<BitBuffer> for BitIterator<'_> {
     fn from(mut buffer: BitBuffer) -> Self {
         let mut full_bytes_iter = Box::new(buffer.get_complete_bytes());
         let current_idx = 0;

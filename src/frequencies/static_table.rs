@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use super::Frequency;
+use super::{Cfi, Frequency, FrequencyTable};
 use anyhow::{Context, Result};
 
 /// A frequency table whose values cannot be updated after initialization
@@ -47,5 +47,50 @@ impl StaticFrequencyTable {
         Ok(Self {
             cum_freqs: cum_freqs.into_boxed_slice(),
         })
+    }
+}
+
+impl FrequencyTable for StaticFrequencyTable {
+    fn get_cfi(&self, index: usize) -> Option<Cfi> {
+        self.cum_freqs
+            // Get start and end of the CFI:
+            .get(index)
+            .zip(self.cum_freqs.get(index + 1))
+            // Map to CFI:
+            .map(|(&start, &end)| Cfi {
+                start,
+                end,
+                total: self.get_total(),
+            })
+    }
+
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
+        // Use binary search since all frequencies are non-negative and therefor all cumulative 
+        // frequencies are sorted:
+        let (mut left, mut right) = (0, self.cum_freqs.len() - 1);
+
+        while left < right {
+            let middle = (left + right) >> 1;
+            
+            // Check lower bound:
+            if cumulative_frequency < self.cum_freqs[middle] {
+                right = middle - 1;
+            }
+            // Check upper bound:
+            else if cumulative_frequency >= self.cum_freqs[middle + 1] {
+                left = middle + 1;
+            }
+            // Spot on!
+            else {
+                return Some(middle);
+            }
+        }
+        
+        None
+    }
+
+    fn get_total(&self) -> Frequency {
+        // Cumulative sum of all frequencies is always the last index in the box:
+        self.cum_freqs[self.cum_freqs.len() - 1]
     }
 }

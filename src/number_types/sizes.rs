@@ -15,8 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod number_types;
+// This file describes the different types used to represent multiple numerical values in the
+// project
 
-fn main() {
-    println!("Hello, world!");
-}
+/// Maximum number of bits that represent the frequency of a symbol in the data
+pub const FREQUENCY_BITS: u32 = 31;
+
+/// Maximum number of bits an interval value can have (must satisfy:
+/// `INTERVAL_BITS >= 2 + FREQUENCY_BITS` to provide the decoder + model enough room to decode all
+/// symbols, even rare ones)
+pub const INTERVAL_BITS: u32 = 33;
+
+/// The type assigned to perform all calculations, avoids both overflow and underflow (must satisfy:
+/// `CALCULATIONS_TYPE_BITS >= INTERVAL_BITS + FREQUENCY_BITS`
+pub type CalculationsType = u64;

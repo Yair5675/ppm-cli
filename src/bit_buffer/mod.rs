@@ -32,6 +32,27 @@ impl BitBuffer {
         }
     }
 
+    /// Inserts a single bit to the end of the buffer multiple times. This method is more efficient
+    /// than calling `append` in a loop.
+    ///
+    /// Note that specifying 0 repetitions is allowed, and won't change the buffer.
+    pub fn append_repeated(&mut self, bit: bool, mut repetitions: usize) {
+        let bit_repeated = if bit { u8::MAX } else { 0 };
+
+        while repetitions >= 8 {
+            // Add to the current byte, then save it:
+            self.current_byte |= bit_repeated >> self.current_idx;
+            repetitions -= 8 - self.current_idx;
+            self.save_current_byte();
+        }
+
+        // Insert leftover bits to current_byte if needed, update current_idx:
+        if repetitions > 0 && bit {
+            self.current_byte |= u8::MAX << (8 - repetitions);
+        }
+        self.current_idx = repetitions;
+    }
+
     /// Saves the current byte into the `full_bytes` list, and resets both `current_idx` and
     /// `current_idx`.
     fn save_current_byte(&mut self) {

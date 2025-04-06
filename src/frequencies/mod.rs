@@ -15,12 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![allow(dead_code)]
+use crate::number_types::{ConstrainedNum, FREQUENCY_BITS};
 
-mod bit_buffer;
-mod frequencies;
-mod number_types;
-
-fn main() {
-    println!("Hello, world!");
-}
+/// Number type for all frequencies, used to limit a frequency's bits
+pub type Frequency = ConstrainedNum<FREQUENCY_BITS>;

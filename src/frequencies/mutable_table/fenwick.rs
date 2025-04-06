@@ -62,3 +62,28 @@ impl FenwickTree {
         }
     }
 }
+
+impl From<&[CalculationsType]> for FenwickTree {
+    /// Constructs a FenwickTree containing the given values.
+    /// 
+    /// This function is more efficient than adding them manually to an empty tree, as this function
+    /// optimizes the operation and reduces the time complexity from **O(n log n)** to **O(n)**.
+    fn from(values: &[CalculationsType]) -> Self {
+        // Initialize data to be all zeroes. Fenwick trees are 1-based, so we add 1 to the length:
+        let mut data = vec![0; values.len() + 1];
+
+        for i in 1..data.len() {
+            // Copy from values:
+            data[i] += values[i - 1];
+
+            // Find the parent index, and add to it as well:
+            let parent_idx = i + lsb(i);
+            if parent_idx < data.len() {
+                let add_to_parent = data[i];
+                data[parent_idx] += add_to_parent;
+            }
+        }
+
+        Self { data: data.into_boxed_slice() }
+    }
+}

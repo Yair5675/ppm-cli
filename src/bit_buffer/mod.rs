@@ -72,3 +72,25 @@ impl BitBuffer {
         std::mem::take(&mut self.full_bytes).into_iter()
     }
 }
+
+impl From<&[u8]> for BitBuffer {
+    fn from(value: &[u8]) -> Self {
+        // Since whose are all full bytes, add them directly to the full_bytes list:
+        Self {
+            full_bytes: LinkedList::from_iter(value.iter().copied()),
+            current_byte: 0,
+            current_idx: 0,
+        }
+    }
+}
+
+impl From<Vec<u8>> for BitBuffer {
+    fn from(value: Vec<u8>) -> Self {
+        // Since whose are all full bytes, add them directly to the full_bytes list:
+        Self {
+            full_bytes: LinkedList::from_iter(value),
+            current_byte: 0,
+            current_idx: 0,
+        }
+    }
+}

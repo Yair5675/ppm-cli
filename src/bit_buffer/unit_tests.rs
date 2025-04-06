@@ -224,3 +224,78 @@ fn test_full_bytes_multiple_bytes_with_remainder() {
     assert_eq!(buffer.current_byte, 0);
     assert_eq!(buffer.current_idx, 3);
 }
+
+#[test]
+fn test_from_slice() {
+    // Test converting a slice into a BitBuffer
+    let data: &[u8] = &[0b10101010, 0b11001100, 0b11110000];
+    let mut buffer: BitBuffer = data.into();
+
+    // The buffer should have exactly 3 bytes
+    assert_eq!(buffer.full_bytes.len(), 3);
+    assert_eq!(buffer.current_byte, 0);
+    assert_eq!(buffer.current_idx, 0);
+
+    // Check the contents of the bytes in the buffer
+    let bytes: Vec<u8> = buffer.get_complete_bytes().collect();
+    assert_eq!(bytes, vec![0b10101010, 0b11001100, 0b11110000]);
+    assert!(buffer.full_bytes.is_empty());
+}
+
+#[test]
+fn test_from_vec() {
+    // Test converting a Vec<u8> into a BitBuffer
+    let data: Vec<u8> = vec![0b10101010, 0b11001100, 0b11110000];
+    let mut buffer: BitBuffer = data.into();
+
+    // The buffer should have exactly 3 bytes
+    assert_eq!(buffer.full_bytes.len(), 3);
+    assert_eq!(buffer.current_byte, 0);
+    assert_eq!(buffer.current_idx, 0);
+
+    // Check the contents of the bytes in the buffer
+    let bytes: Vec<u8> = buffer.get_complete_bytes().collect();
+    assert_eq!(bytes, vec![0b10101010, 0b11001100, 0b11110000]);
+    assert!(buffer.full_bytes.is_empty());
+}
+
+#[test]
+fn test_from_empty_slice() {
+    // Test converting an empty slice into a BitBuffer
+    let data: &[u8] = &[];
+    let buffer: BitBuffer = data.into();
+
+    // The buffer should have no bytes
+    assert_eq!(buffer.full_bytes.len(), 0);
+    assert_eq!(buffer.current_byte, 0);
+    assert_eq!(buffer.current_idx, 0);
+}
+
+#[test]
+fn test_from_empty_vec() {
+    // Test converting an empty Vec<u8> into a BitBuffer
+    let data: Vec<u8> = Vec::new();
+    let buffer: BitBuffer = data.into();
+
+    // The buffer should have no bytes
+    assert_eq!(buffer.full_bytes.len(), 0);
+    assert_eq!(buffer.current_byte, 0);
+    assert_eq!(buffer.current_idx, 0);
+}
+
+#[test]
+fn test_from_single_byte() {
+    // Test converting a single byte slice into a BitBuffer
+    let data: &[u8] = &[0b10101010];
+    let mut buffer: BitBuffer = data.into();
+
+    // The buffer should have exactly 1 byte
+    assert_eq!(buffer.full_bytes.len(), 1);
+    assert_eq!(buffer.current_byte, 0);
+    assert_eq!(buffer.current_idx, 0);
+
+    // Check the contents of the bytes in the buffer
+    let bytes: Vec<u8> = buffer.get_complete_bytes().collect();
+    assert_eq!(bytes, vec![0b10101010]);
+    assert!(buffer.full_bytes.is_empty());
+}

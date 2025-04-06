@@ -1,9 +1,12 @@
 name: PPM-CLI PR Check
 
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test_pr:

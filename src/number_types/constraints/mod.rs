@@ -2,6 +2,7 @@
 mod unit_tests;
 mod bit_ops;
 
+use std::fmt::{Display, Formatter};
 use super::sizes::CalculationsType;
 use std::ops::Deref;
 use thiserror::Error;
@@ -59,6 +60,13 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
         } else {
             Self((1 << BITS) - 1)
         }
+    }
+}
+
+// Implement display that shows all bits:
+impl<const BITS: u32> Display for ConstrainedNum<BITS> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:0bits$b}", self.0, bits = BITS as usize)
     }
 }
 

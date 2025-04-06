@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod bit_iter;
+pub mod bit_iter;
 #[cfg(test)]
 mod unit_tests;
 

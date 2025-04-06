@@ -16,9 +16,36 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use super::Frequency;
+use anyhow::{Context, Result};
 
 /// A frequency table whose values cannot be updated after initialization
 pub struct StaticFrequencyTable {
     /// The cumulative frequencies, stored in a box for memory optimization reasons
     cum_freqs: Box<[Frequency]>,
+}
+
+impl StaticFrequencyTable {
+    /// Creates a static frequency table from the frequencies provided here.<br>
+    /// The new table's length will be the length of the provided slice.
+    ///
+    /// The frequencies provided here should not be cumulative, and the function will fail if at
+    /// any point the sum of the slice's frequencies exceeds the allowed bits.
+    pub fn new(frequencies: &[Frequency]) -> Result<Self> {
+        // Initialize the cumulative frequencies vector with 0 as the first CFI's start value:
+        let mut accum = 0;
+        let mut cum_freqs = Vec::with_capacity(frequencies.len() + 1);
+        cum_freqs.push(Frequency::zero());
+
+        for (idx, frequency) in frequencies.iter().enumerate() {
+            // Calculate cumulative and catch any overflow:
+            accum += **frequency;
+            cum_freqs.push(Frequency::new(accum).context(format!(
+                "Failed to create static table, index {idx} caused an overflow"
+            ))?);
+        }
+
+        Ok(Self {
+            cum_freqs: cum_freqs.into_boxed_slice(),
+        })
+    }
 }

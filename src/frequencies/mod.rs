@@ -17,6 +17,8 @@
 
 pub mod static_table;
 mod symbol;
+#[cfg(test)]
+mod unit_tests;
 
 use crate::number_types::{ConstrainedNum, FREQUENCY_BITS};
 
@@ -24,7 +26,7 @@ use crate::number_types::{ConstrainedNum, FREQUENCY_BITS};
 pub type Frequency = ConstrainedNum<FREQUENCY_BITS>;
 
 /// A struct describing the Cumulative Frequency Interval of a symbol
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Cfi {
     pub start: Frequency,
     pub end: Frequency,

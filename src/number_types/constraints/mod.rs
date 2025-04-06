@@ -2,6 +2,7 @@
 mod unit_tests;
 
 use super::sizes::CalculationsType;
+use std::ops::Deref;
 use thiserror::Error;
 
 /// Returns the number of bits used by a number
@@ -35,6 +36,15 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
         } else {
             Ok(Self(value))
         }
+    }
+}
+
+// Allow direct access to the numerical type:
+impl<const BITS: u32> Deref for ConstrainedNum<BITS> {
+    type Target = CalculationsType;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

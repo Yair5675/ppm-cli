@@ -63,9 +63,21 @@ impl FenwickTree {
     }
 }
 
+impl<const N: usize> From<&[CalculationsType; N]> for FenwickTree {
+    fn from(values: &[CalculationsType; N]) -> Self {
+        FenwickTree::from(&values[..])
+    }
+}
+
+impl From<&Vec<CalculationsType>> for FenwickTree {
+    fn from(values: &Vec<CalculationsType>) -> Self {
+        FenwickTree::from(&values[..])
+    }
+}
+
 impl From<&[CalculationsType]> for FenwickTree {
     /// Constructs a FenwickTree containing the given values.
-    /// 
+    ///
     /// This function is more efficient than adding them manually to an empty tree, as this function
     /// optimizes the operation and reduces the time complexity from **O(n log n)** to **O(n)**.
     fn from(values: &[CalculationsType]) -> Self {
@@ -84,6 +96,85 @@ impl From<&[CalculationsType]> for FenwickTree {
             }
         }
 
-        Self { data: data.into_boxed_slice() }
+        Self {
+            data: data.into_boxed_slice(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_fenwick_tree() {
+        let values = [1, 2, 3, 4, 5];
+        let tree = FenwickTree::from(&values[..]);
+
+        // Test if the cumulative sums are correct:
+        assert_eq!(tree.get_sum(0), 0); // Sum up to index 0 (should be 0)
+        assert_eq!(tree.get_sum(1), 1); // Sum up to index 1 (should be 1)
+        assert_eq!(tree.get_sum(2), 3); // Sum up to index 2 (should be 1 + 2)
+        assert_eq!(tree.get_sum(3), 6); // Sum up to index 3 (should be 1 + 2 + 3)
+        assert_eq!(tree.get_sum(4), 10); // Sum up to index 4 (should be 1 + 2 + 3 + 4)
+        assert_eq!(tree.get_sum(5), 15); // Sum up to index 5 (should be 1 + 2 + 3 + 4 + 5)
+    }
+
+    #[test]
+    fn test_empty_tree() {
+        let tree = FenwickTree::new(5);
+
+        // For an empty tree, all sums should be zero
+        assert_eq!(tree.get_sum(0), 0);
+        assert_eq!(tree.get_sum(1), 0);
+        assert_eq!(tree.get_sum(2), 0);
+        assert_eq!(tree.get_sum(3), 0);
+        assert_eq!(tree.get_sum(4), 0);
+        assert_eq!(tree.get_sum(5), 0);
+    }
+
+    #[test]
+    fn test_add() {
+        let mut tree = FenwickTree::from(&[1, 2, 3, 4, 5]);
+
+        // New tree after addition - [1, 2, 6, 4, 5]:
+        tree.add(2, 3);
+
+        assert_eq!(tree.get_sum(1), 1); // 1
+        assert_eq!(tree.get_sum(2), 3); // 1 + 2 = 3
+        assert_eq!(tree.get_sum(3), 9); // 1 + 2 + 6 = 9
+        assert_eq!(tree.get_sum(4), 13); // 1 + 2 + 6 + 4 = 13
+        assert_eq!(tree.get_sum(5), 18); // 1 + 2 + 6 + 4 + 5 = 18
+    }
+
+    #[test]
+    fn test_multiple_adds() {
+        let mut tree = FenwickTree::from(&[1, 2, 3, 4, 5]);
+
+        // New tree after both additions = [1, 7, 3, 14, 5]
+        tree.add(3, 10);
+        tree.add(1, 5);
+
+        assert_eq!(tree.get_sum(1), 1); // 1
+        assert_eq!(tree.get_sum(2), 8); // 1 + 7 = 8
+        assert_eq!(tree.get_sum(3), 11); // 1 + 7 + 3 = 11
+        assert_eq!(tree.get_sum(4), 25); // 1 + 7 + 3 + 14 = 25
+        assert_eq!(tree.get_sum(5), 30); // 1 + 7 + 3 + 14 + 5 = 30
+    }
+
+    #[test]
+    fn test_edge_case_empty_values() {
+        let empty: Vec<CalculationsType> = Vec::new();
+        let tree = FenwickTree::from(&empty); // Create an empty tree
+        assert_eq!(tree.get_sum(0), 0); // There should be no sum for any index
+    }
+
+    #[test]
+    fn test_large_input() {
+        let values: Vec<CalculationsType> = (1..=10000).collect();
+        let tree = FenwickTree::from(&values);
+
+        // Test if the sum of the first 10000 values is correct
+        assert_eq!(tree.get_sum(10_000), 50005000); // Sum of first 10000 natural numbers: n*(n+1)/2
     }
 }

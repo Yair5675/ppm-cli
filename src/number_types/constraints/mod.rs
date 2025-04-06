@@ -1,9 +1,9 @@
+mod bit_ops;
 #[cfg(test)]
 mod unit_tests;
-mod bit_ops;
 
-use std::fmt::{Display, Formatter};
 use super::sizes::CalculationsType;
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 use thiserror::Error;
 
@@ -39,20 +39,20 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
             Ok(Self(value))
         }
     }
-    
+
     /// Creates a ConstrainedNum holding the value 0.<br>
     /// This operation is always safe since 0 uses no bits.
     pub fn zero() -> Self {
         Self(0)
     }
-    
+
     /// Creates a ConstrainedNum holding the value 1.<br>
-    /// This operation is always safe since BITS must be greater than or equal to 1, therefor 
+    /// This operation is always safe since BITS must be greater than or equal to 1, therefor
     /// always allowing it to hold the value 1.
     pub fn one() -> Self {
         Self(1)
     }
-    
+
     /// Returns the maximum value allowed using BITS bits.
     pub const fn max() -> Self {
         if BITS == CalculationsType::BITS {

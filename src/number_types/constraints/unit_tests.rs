@@ -50,7 +50,6 @@ fn minimal_valid_value() {
     assert!(result.is_ok());
 }
 
-
 type C3 = ConstrainedNum<3>; // Max value: 0b111 = 7
 type C4 = ConstrainedNum<4>; // Max value: 0b1111 = 15
 
@@ -64,14 +63,14 @@ fn bitand_with_primitive() {
 #[test]
 fn bitor_with_primitive_masks_correctly() {
     let a = C3::new(0b001).unwrap(); // 1
-    let result = a | 0b1111u8;       // 0b1111 = 15, masked down to 0b111 = 7
+    let result = a | 0b1111u8; // 0b1111 = 15, masked down to 0b111 = 7
     assert_eq!(result.0, 0b111); // Masked to 3 bits
 }
 
 #[test]
 fn bitxor_with_primitive_masks_correctly() {
     let a = C3::new(0b101).unwrap(); // 5
-    let result = a ^ 0b1111u8;       // 5 ^ 15 = 10, 0b1010 & 0b111 = 0b010
+    let result = a ^ 0b1111u8; // 5 ^ 15 = 10, 0b1010 & 0b111 = 0b010
     assert_eq!(result.0, 0b010); // Masked to 3 bits
 }
 
@@ -129,8 +128,8 @@ fn bitor_self_does_not_exceed_constraints() {
 fn bitxor_self_result_fits_constraints() {
     let a = C3::new(0b111).unwrap(); // 7
     let b = C3::new(0b101).unwrap(); // 5
-    let result = a ^ b;             // 7 ^ 5 = 2, fits in 3 bits
-    assert_eq!(result.0, 0b010);    // Result is within 3 bits
+    let result = a ^ b; // 7 ^ 5 = 2, fits in 3 bits
+    assert_eq!(result.0, 0b010); // Result is within 3 bits
 }
 
 #[test]

@@ -302,6 +302,50 @@ fn test_from_single_byte() {
 }
 
 #[test]
+fn test_leftover_empty() {
+    let buffer = BitBuffer::new();
+    assert!(buffer.get_leftover_bits().is_none());
+}
+
+#[test]
+fn test_leftover_less_than_byte() {
+    let mut buffer = BitBuffer::new();
+    buffer.append(true);
+    buffer.append(false);
+    buffer.append(true);
+    
+    let leftover = buffer.get_leftover_bits();
+    assert!(leftover.is_some());
+    assert_eq!(leftover.unwrap(), 0b10100000);
+}
+
+#[test]
+fn test_leftover_exactly_one_byte() {
+    let buffer = BitBuffer::from(vec![0b10011010u8]);
+    
+    let leftover = buffer.get_leftover_bits();
+    assert!(leftover.is_none());
+}
+
+#[test]
+fn test_leftover_byte_with_remainder() {
+    let mut buffer = BitBuffer::from(vec![0b10011010u8]);
+    buffer.append(false);
+    
+    let leftover = buffer.get_leftover_bits();
+    assert!(leftover.is_some());
+    assert_eq!(leftover.unwrap(), 0);
+}
+
+#[test] 
+fn test_leftover_multiple_bytes_no_remainder() {
+    let buffer = BitBuffer::from(vec![15, 120u8, 11, 33]);
+
+    let leftover = buffer.get_leftover_bits();
+    assert!(leftover.is_none());
+}
+
+#[test]
 fn test_bit_iterator_empty() {
     let buffer = BitBuffer::new();
     let bit_iterator: BitIterator = buffer.into();

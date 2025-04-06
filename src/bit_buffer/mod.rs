@@ -72,6 +72,23 @@ impl BitBuffer {
     pub fn get_complete_bytes(&mut self) -> impl Iterator<Item = u8> {
         std::mem::take(&mut self.full_bytes).into_iter()
     }
+    
+    /// If the number of bits in the buffer isn't divisible by 8, there will exist 'leftover' bits,
+    /// which cannot be turned into a byte without padding.
+    /// 
+    /// The function will return those leftover bits, padded with zeroes. Those zero bits will be
+    /// added to the right of the leftover bits (i.e: the least significant bit of the returned byte
+    /// is guaranteed to be a padding zero bit).
+    /// If no leftover bits exist, the function returns None.
+    /// 
+    /// Note that this operation does **not** remove those leftover bits from the buffer.
+    pub fn get_leftover_bits(&self) -> Option<u8> {
+        if self.current_idx > 0 {
+            Some(self.current_byte)
+        } else {
+            None
+        }
+    }
 }
 
 impl From<&[u8]> for BitBuffer {

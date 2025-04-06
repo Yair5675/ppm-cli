@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod unit_tests;
+
 use std::collections::LinkedList;
 
 /// A buffer dedicated to bit storage
@@ -60,7 +63,7 @@ impl BitBuffer {
         self.current_byte = 0;
         self.current_idx = 0;
     }
-    
+
     /// Extracts full bytes from the buffer and returns them as an iterator. If there aren't enough
     /// bits in the buffer to form a single byte, the iterator will be empty.<br>
     /// To remove ambiguity: **The bytes will not remain in the buffer after calling this

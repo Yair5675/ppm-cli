@@ -12,6 +12,8 @@ jobs:
   test_pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Enter Project
+        run: cd ppm-cli
       - name: Check Formatting
         run: cargo fmt --all -- --check
       - name: Build

@@ -61,6 +61,12 @@ impl<const BITS: u32> Deref for ConstrainedNum<BITS> {
     }
 }
 
+impl<const BITS: u32> From<ConstrainedNum<BITS>> for CalculationsType {
+    fn from(value: ConstrainedNum<BITS>) -> Self {
+        value.0
+    }
+}
+
 impl<const BITS: u32> From<bool> for ConstrainedNum<BITS> {
     fn from(value: bool) -> Self {
         if value {

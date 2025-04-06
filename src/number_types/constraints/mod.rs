@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod unit_tests;
+mod bit_ops;
 
 use super::sizes::CalculationsType;
 use std::ops::Deref;
@@ -49,6 +50,15 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
     /// always allowing it to hold the value 1.
     pub fn one() -> Self {
         Self(1)
+    }
+    
+    /// Returns the maximum value allowed using BITS bits.
+    pub const fn max() -> Self {
+        if BITS == CalculationsType::BITS {
+            Self(CalculationsType::MAX)
+        } else {
+            Self((1 << BITS) - 1)
+        }
     }
 }
 

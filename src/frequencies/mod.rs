@@ -73,3 +73,11 @@ impl Display for Symbol {
         }
     }
 }
+
+/// A struct describing the Cumulative Frequency Interval of a symbol
+#[derive(Debug, Clone)]
+pub struct Cfi {
+    pub start: Frequency,
+    pub end: Frequency,
+    pub total: Frequency,
+}

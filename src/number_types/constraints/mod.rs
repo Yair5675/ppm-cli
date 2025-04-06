@@ -37,6 +37,19 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
             Ok(Self(value))
         }
     }
+    
+    /// Creates a ConstrainedNum holding the value 0.<br>
+    /// This operation is always safe since 0 uses no bits.
+    pub fn zero() -> Self {
+        Self(0)
+    }
+    
+    /// Creates a ConstrainedNum holding the value 1.<br>
+    /// This operation is always safe since BITS must be greater than or equal to 1, therefor 
+    /// always allowing it to hold the value 1.
+    pub fn one() -> Self {
+        Self(1)
+    }
 }
 
 // Allow direct access to the numerical type:
@@ -45,6 +58,16 @@ impl<const BITS: u32> Deref for ConstrainedNum<BITS> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<const BITS: u32> From<bool> for ConstrainedNum<BITS> {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::one()
+        } else {
+            Self::zero()
+        }
     }
 }
 

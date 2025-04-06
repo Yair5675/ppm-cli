@@ -18,7 +18,6 @@
 pub mod static_table;
 mod symbol;
 
-pub use self::symbol::Symbol;
 use crate::number_types::{ConstrainedNum, FREQUENCY_BITS};
 
 /// Number type for all frequencies, used to limit a frequency's bits
@@ -32,15 +31,17 @@ pub struct Cfi {
     pub total: Frequency,
 }
 
-/// The necessary functions any frequency table must implement
+/// A frequency table is anything that assigns Cumulative-Frequency-Intervals to indices. The
+/// following trait defines its required functions.
 pub trait FrequencyTable {
-    /// Returns the CFI assigned to the given symbol, or None if such CFI is empty (start == end).
-    fn get_cfi(&self, symbol: &Symbol) -> Option<Cfi>;
+    /// Returns the CFI assigned to the given index, or None if such CFI is empty (start == end) or
+    /// the index is out of the table's bounds.
+    fn get_cfi(&self, index: usize) -> Option<Cfi>;
 
-    /// Given a cumulative frequency value, return the symbol whose CFI contains the value.
+    /// Given a cumulative frequency value, return the index whose assigned CFI contains the value.
     /// If such CFI is not found, None is returned.
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol>;
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize>;
 
-    /// Returns the total number of frequencies saved in the table.
+    /// Returns the total cumulative number of frequencies saved in the table.
     fn get_total(&self) -> Frequency;
 }

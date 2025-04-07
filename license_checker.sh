@@ -43,6 +43,8 @@ done
 
 if [[ $files_valid = true ]]; then
   printf "\nAll rust files contain the license! ( •_•)>⌐■-■  (⌐■_■)\n"
+  exit 0
 else
   printf "\nSome files are missing their license.\nEnsure it is placed at the beginning of all rust files\n"
+  exit 1
 fi

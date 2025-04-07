@@ -49,10 +49,7 @@ impl MutableFrequencyTable {
         let total = Frequency::new(fenwick.get_sum(fenwick.len()))
             .context("Failed to create mutable table, overflow occurred for total")?;
 
-        Ok(Self {
-            fenwick,
-            total,
-        })
+        Ok(Self { fenwick, total })
     }
 
     /// Adds a certain amount to the frequency at the given index in the table.
@@ -70,7 +67,7 @@ impl MutableFrequencyTable {
 
 impl FrequencyTable for MutableFrequencyTable {
     fn get_cfi(&self, index: usize) -> Option<Cfi> {
-        if index < self.fenwick.len() - 1 {
+        if index < self.fenwick.len() {
             Some(Cfi {
                 // Invariants ensure unwrapping frequencies is safe:
                 start: Frequency::new(self.fenwick.get_sum(index))

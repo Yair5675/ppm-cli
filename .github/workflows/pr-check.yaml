@@ -9,36 +9,20 @@ on:
       - master
 
 jobs:
-  check_licenses:
+  test_pr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Change script to executable just in case
-        run: chmod +x license_checker.sh
-      - name: Run license script
-        run: ./license_checker.sh
-
-  check_formatting:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo fmt --all -- --check
-
-  check_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo build --release --verbose
-
-  test_build:
-    runs-on: ubuntu-latest
-    needs: check_build
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo test --verbose
-
-  check_with_linter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo clippy -- -Dwarnings
+      - name: Check License in Rust files
+        run: |
+          chmod +x license_checker.sh
+          ./license_checker.sh
+        shell: bash
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+      - name: Build
+        run: cargo build --release --verbose
+      - name: Test
+        run: cargo test --verbose
+      - name: Linter
+        run: cargo clippy -- -Dwarnings

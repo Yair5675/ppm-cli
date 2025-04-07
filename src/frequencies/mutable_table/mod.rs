@@ -20,6 +20,7 @@ mod fenwick;
 use self::fenwick::FenwickTree;
 use super::{Cfi, Frequency, FrequencyTable};
 
+use crate::number_types::CalculationsType;
 use anyhow::{Context, Result};
 
 /// A frequency table which can be mutated
@@ -39,23 +40,18 @@ impl MutableFrequencyTable {
     /// The frequencies provided here should not be cumulative, and the function will fail if at
     /// any point the sum of the slice's frequencies exceeds the allowed bits.
     pub fn new(frequencies: &[Frequency]) -> Result<Self> {
-        let mut accum = Frequency::zero();
-        let mut current_idx = 1; // Keep first index 0
-        let mut fenwick = FenwickTree::new(frequencies.len() + 1);
-
-        for frequency in frequencies.iter() {
-            accum = Frequency::new(*accum + **frequency).context(format!(
-                "Failed to create mutable table, index {} caused an overflow",
-                current_idx - 1
-            ))?;
-
-            fenwick.add(current_idx, *accum);
-            current_idx += 1;
-        }
+        let fenwick = FenwickTree::from(
+            &frequencies
+                .iter()
+                .map(|f| **f)
+                .collect::<Vec<CalculationsType>>(),
+        );
+        let total = Frequency::new(fenwick.get_sum(fenwick.len()))
+            .context("Failed to create mutable table, overflow occurred for total")?;
 
         Ok(Self {
             fenwick,
-            total: accum,
+            total,
         })
     }
 

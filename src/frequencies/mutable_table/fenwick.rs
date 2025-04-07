@@ -51,7 +51,7 @@ impl FenwickTree {
         }
         sum
     }
-    
+
     /// Returns the length of the tree, i.e: how many elements it contains
     pub fn len(&self) -> usize {
         self.data.len() - 1

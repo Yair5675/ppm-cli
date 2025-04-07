@@ -58,9 +58,9 @@ impl MutableFrequencyTable {
             total: accum,
         })
     }
-    
+
     /// Adds a certain amount to the frequency at the given index in the table.
-    /// 
+    ///
     /// If the result of that addition exceeds the bits allowed for a frequency, it is not saved in
     /// the table.
     pub fn add_frequency(&mut self, index: usize, amount: Frequency) {

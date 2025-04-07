@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check License in Rust files
+        run: |
+          chmod +x license_checker.sh
+          ./license_checker.sh
+        shell: bash
       - name: Check Formatting
         run: cargo fmt --all -- --check
       - name: Build

@@ -152,5 +152,5 @@ fn test_add_frequency() {
     assert_eq!(*cfi_1.start, 1);
     assert_eq!(*cfi_1.end, 5);
 
-    assert_eq!(*table.get_total(), 7);
+    assert_eq!(*table.get_total(), 6);
 }

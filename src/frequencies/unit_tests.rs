@@ -59,6 +59,32 @@ fn test_static_frequency_table_creation() {
 }
 
 #[test]
+fn test_static_table_empty_cfi() {
+    let freqs = vec![
+        Frequency::new(1).unwrap(),
+        Frequency::new(0).unwrap(),
+        Frequency::new(3).unwrap(),
+        Frequency::new(0).unwrap(),
+    ];
+    let table = StaticFrequencyTable::new(&freqs).unwrap();
+    assert!(table.get_cfi(1).is_none());
+    assert!(table.get_cfi(3).is_none());
+}
+
+#[test]
+fn test_mutable_table_empty_cfi() {
+    let freqs = vec![
+        Frequency::new(2).unwrap(),
+        Frequency::new(0).unwrap(),
+        Frequency::new(3).unwrap(),
+        Frequency::new(0).unwrap(),
+    ];
+    let table = MutableFrequencyTable::new(&freqs).unwrap();
+    assert!(table.get_cfi(1).is_none());
+    assert!(table.get_cfi(3).is_none());
+}
+
+#[test]
 fn test_static_frequency_table_get_index() {
     let freqs = vec![
         Frequency::new(1).unwrap(),

@@ -68,14 +68,21 @@ impl MutableFrequencyTable {
 impl FrequencyTable for MutableFrequencyTable {
     fn get_cfi(&self, index: usize) -> Option<Cfi> {
         if index < self.fenwick.len() {
-            Some(Cfi {
-                // Invariants ensure unwrapping frequencies is safe:
-                start: Frequency::new(self.fenwick.get_sum(index))
-                    .expect("MutableFrequencyTable invariant violated"),
-                end: Frequency::new(self.fenwick.get_sum(index + 1))
-                    .expect("MutableFrequencyTable invariant violated"),
-                total: self.total,
-            })
+            // Invariants ensure unwrapping frequencies is safe:
+            let start = Frequency::new(self.fenwick.get_sum(index))
+                .expect("MutableFrequencyTable invariant violated");
+            let end = Frequency::new(self.fenwick.get_sum(index + 1))
+                .expect("MutableFrequencyTable invariant violated");
+
+            if start == end {
+                None
+            } else {
+                Some(Cfi {
+                    start,
+                    end,
+                    total: self.total,
+                })
+            }
         } else {
             None
         }

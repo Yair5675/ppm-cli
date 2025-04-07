@@ -56,11 +56,17 @@ impl FrequencyTable for StaticFrequencyTable {
             // Get start and end of the CFI:
             .get(index)
             .zip(self.cum_freqs.get(index + 1))
-            // Map to CFI:
-            .map(|(&start, &end)| Cfi {
-                start,
-                end,
-                total: self.get_total(),
+            // Map to CFI, check if start is equal to end:
+            .and_then(|(&start, &end)| {
+                if start == end {
+                    None
+                } else {
+                    Some(Cfi {
+                        start,
+                        end,
+                        total: self.get_total(),
+                    })
+                }
             })
     }
 

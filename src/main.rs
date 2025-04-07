@@ -18,6 +18,7 @@
 #![allow(dead_code)]
 
 mod bit_buffer;
+mod frequencies;
 mod number_types;
 
 fn main() {

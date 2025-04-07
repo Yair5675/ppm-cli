@@ -16,3 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 mod constraints;
 mod sizes;
+
+// Bring them to scope, spare users from specifying `sizes::` or `constraints::`:
+pub use constraints::*;
+pub use sizes::*;

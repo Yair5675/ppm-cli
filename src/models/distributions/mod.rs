@@ -15,8 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use anyhow::Result;
 use std::num::NonZero;
 use thiserror::Error;
+use crate::frequencies::{Cfi, Frequency};
+use crate::number_types::CalculationsType;
+use super::{Model, ModelCFI};
 
 /// A probability model that assigns each index an equal probability
 pub struct UniformDistributionModel {
@@ -60,3 +64,38 @@ impl UniformDistributionModel {
 #[derive(Debug, Error)]
 #[error("The number of symbols in the model is {0}, yet the index chosen for the escape symbol is {1}")]
 pub struct EscapeIndexTooLarge(usize, usize);
+
+impl Model for UniformDistributionModel {
+    fn get_cfi(&self, index: usize) -> Result<ModelCFI> {
+        // Check index:
+        if index >= self.num_symbols.get() {
+            return Ok(ModelCFI::UnsupportedIndex);
+        }
+        // Since each index is assigned a probability of 1, its CFI can be easily computed:
+        let cfi = Cfi {
+            start: Frequency::new(index as CalculationsType)?,
+            end: Frequency::new((index + 1) as CalculationsType)?,
+            total: Frequency::new(self.num_symbols.get() as CalculationsType)?
+        };
+        
+        Ok(match self.escape_idx {
+            Some(escape_idx) if escape_idx == index => ModelCFI::EscapeCfi(cfi),
+            _ => ModelCFI::IndexCfi(cfi),
+        })
+    }
+
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
+        // Since each index gets an equal probability, the cumulative frequency is equal to the 
+        // index itself:
+        if *cumulative_frequency >= self.num_symbols.get() as CalculationsType {
+            None
+        } else {
+            Some(*cumulative_frequency as usize)
+        }
+    }
+
+    fn get_total(&self) -> Frequency {
+        // For now unwrap, fix later
+        Frequency::new(self.num_symbols.get() as CalculationsType).unwrap()
+    }
+}

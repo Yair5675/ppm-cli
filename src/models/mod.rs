@@ -48,10 +48,10 @@ pub trait Model {
     ///
     /// ## Parameters:
     /// * _index_: The index whose CFI will be returned.<br>
-    ///            Depending on the implementation, the model may return the CFI directly or emit
-    ///            an escape CFI. If the model emits an escape CFI for a non-escape index, it is the
-    ///            responsibility of the caller to repeatedly call the `get_cfi` + `update` methods
-    ///            until either an actual CFI or an error is returned.
+    ///   Depending on the implementation, the model may return the CFI directly or emit
+    ///   an escape CFI. If the model emits an escape CFI for a non-escape index, it is the
+    ///   responsibility of the caller to repeatedly call the `get_cfi` + `update` methods
+    ///   until either an actual CFI or an error is returned.
     /// ## Returns:
     /// A CFI assigned to that index in the model, or an escape CFI leading to that CFI.
     ///

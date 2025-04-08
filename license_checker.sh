@@ -37,7 +37,7 @@ for file in $files; do
     echo "✔ $file contains the expected license"
   else
     files_valid=false
-    echo "❌ $file does NOT contain the expected license"
+    echo "❌ $file does NOT contain the full expected license, check for typos in this file"
   fi
 done
 
@@ -45,6 +45,6 @@ if [[ $files_valid = true ]]; then
   printf "\nAll rust files contain the license! ( •_•)>⌐■-■  (⌐■_■)\n"
   exit 0
 else
-  printf "\nSome files are missing their license.\nEnsure it is placed at the beginning of all rust files\n"
+  printf "\nSome files are missing their license.\nEnsure it is placed inside each file and contains no typos\n"
   exit 1
 fi

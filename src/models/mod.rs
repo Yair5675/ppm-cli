@@ -14,3 +14,20 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+use crate::frequencies::Cfi;
+
+/// Outputs of a probability model, wrapping CFIs to provide information for model-updating.
+pub enum ModelCFI {
+    /// Normal CFI, represents a regular symbol/index
+    IndexCfi(Cfi),
+
+    /// Either a CFI of an escape symbol, OR a CFI given by the model to alert the decompression
+    /// of something. If received during the compression of a non-escape symbol, the compressor
+    /// needs to re-compress the symbol until the model outputs either a IndexCFI or 
+    /// UnsupportedIndex
+    EscapeCfi(Cfi),
+    
+    /// The result of an unsupported index/symbol given to the model
+    UnsupportedIndex
+}

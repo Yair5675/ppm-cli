@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::frequencies::symbol::Symbol;
+pub mod symbol;
+
+use symbol::Symbol;
 
 pub trait SymbolIndexMapping {
     /// Computes a unique index for _symbol_. If _symbol_ is not supported by the mapping, None is

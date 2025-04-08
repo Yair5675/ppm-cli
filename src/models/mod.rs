@@ -17,43 +17,50 @@
 
 pub mod distributions;
 
-use anyhow::Result;
 use crate::frequencies::{Cfi, Frequency};
+use anyhow::Result;
+use thiserror::Error;
 
 /// Outputs of a probability model, wrapping CFIs to provide information for model-updating.
-pub enum ModelCFI {
+pub enum ModelCfi {
     /// Normal CFI, represents a regular symbol/index
     IndexCfi(Cfi),
 
     /// Either a CFI of an escape symbol, OR a CFI given by the model to alert the decompression
     /// of something. If received during the compression of a non-escape symbol, the compressor
-    /// needs to re-compress the symbol until the model outputs either a IndexCFI or 
+    /// needs to re-compress the symbol until the model outputs either a IndexCFI or
     /// UnsupportedIndex
     EscapeCfi(Cfi),
-    
-    /// The result of an unsupported index/symbol given to the model
-    UnsupportedIndex
+}
+
+/// Errors that might occur when getting a CFI from a model:
+#[derive(Debug, Error)]
+pub enum ModelCfiError {
+    #[error("The model does not support the index \"{0}\", yet it was queried")]
+    UnsupportedIndex(usize),
+    #[error("The CFI of the index \"{index:}\" is empty")]
+    EmptyCfi { index: usize },
 }
 
 /// A trait defining the behavior of a probability model
 pub trait Model {
     /// Computes a Cumulative-Frequency-Interval for a given index.
-    /// 
+    ///
     /// ## Parameters:
     /// * _index_: The index whose CFI will be returned.<br>
     ///            Depending on the implementation, the model may return the CFI directly or emit
     ///            an escape CFI. If the model emits an escape CFI for a non-escape index, it is the
     ///            responsibility of the caller to repeatedly call the `get_cfi` + `update` methods
-    ///            until either an actual CFI is returned OR an `UnsupportedIndex` variant is 
-    ///            returned.
+    ///            until either an actual CFI or an error is returned.
     /// ## Returns:
     /// A CFI assigned to that index in the model, or an escape CFI leading to that CFI.
-    /// 
+    ///
     /// ## Possible Failures:
-    /// A `ModelCFI::UnsupportedIndex` may be returned if an unsupported index was provided. 
-    /// Moreover, the specific implementation of the Model may fail for other reasons (hence the
-    /// anyhow::Result wrapper around the ModelCfi).
-    fn get_cfi(&self, index: usize) -> Result<ModelCFI>;
+    /// Each model should return `ModelCfiError::UnsupportedIndex` if index is not a part of their
+    /// allowed symbols.
+    /// Additionally, each model should return a `ModelCfiError::EmptyCfi` if the CFI assigned to
+    /// the given index is empty (i.e: its start value equals its end value)
+    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError>;
 
     /// Given a cumulative frequency value, the function returns the index whose CFI in the model
     /// contains the given value.
@@ -61,7 +68,7 @@ pub trait Model {
     /// # Parameters:
     /// * cumulative_frequency - A cumulative frequency value that lies inside a CFI in the model.
     fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize>;
-    
+
     /// Returns the total cumulative frequencies in the table currently used by the model.
     fn get_total(&self) -> Frequency;
 
@@ -80,7 +87,7 @@ pub trait Model {
     /// ## Returns
     /// Nothing if the update went smoothly, otherwise propagates any update error.
     #[allow(unused_variables)]
-    fn update(&mut self, index: usize, model_result: &ModelCFI) -> Result<()> {
+    fn update(&mut self, index: usize, model_result: &ModelCfi) -> Result<()> {
         Ok(())
     }
 }

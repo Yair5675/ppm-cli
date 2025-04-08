@@ -17,7 +17,7 @@
 
 use crate::frequencies::static_table::StaticFrequencyTable;
 use crate::frequencies::{Frequency, FrequencyTable};
-use crate::models::{Model, ModelCFI};
+use crate::models::{Model, ModelCfi, ModelCfiError};
 use anyhow::Result;
 
 // TODO: Consider adding escape support later
@@ -26,6 +26,8 @@ use anyhow::Result;
 pub struct CustomDistributionModel {
     /// The table holding all frequencies
     table: StaticFrequencyTable,
+    /// Number of indices in the model:
+    num_symbols: usize,
 }
 
 impl CustomDistributionModel {
@@ -33,17 +35,22 @@ impl CustomDistributionModel {
     /// exceeds Frequency::max(), an error will be returned.
     pub fn new(frequencies: &[Frequency]) -> Result<Self> {
         Ok(Self {
+            num_symbols: frequencies.len(),
             table: StaticFrequencyTable::new(frequencies)?,
         })
     }
 }
 
 impl Model for CustomDistributionModel {
-    fn get_cfi(&self, index: usize) -> Result<ModelCFI> {
-        Ok(self
-            .table
-            .get_cfi(index)
-            .map_or(ModelCFI::UnsupportedIndex, ModelCFI::IndexCfi))
+    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
+        if index >= self.num_symbols {
+            Err(ModelCfiError::UnsupportedIndex(index))
+        } else {
+            self.table
+                .get_cfi(index)
+                .map(ModelCfi::IndexCfi)
+                .ok_or(ModelCfiError::EmptyCfi { index })
+        }
     }
 
     fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {

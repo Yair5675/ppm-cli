@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::frequencies::{Cfi, Frequency};
-use crate::models::{Model, ModelCFI};
+use crate::models::{Model, ModelCfi, ModelCfiError};
 use crate::number_types::{BitsConstraintError, CalculationsType, FREQUENCY_BITS};
 use std::num::NonZero;
 use thiserror::Error;
@@ -85,22 +85,31 @@ pub enum UniformModelInitError {
 }
 
 impl Model for UniformDistributionModel {
-    fn get_cfi(&self, index: usize) -> anyhow::Result<ModelCFI> {
+    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
         // Check index:
-        let index = index as CalculationsType;
-        if index >= *self.num_symbols {
-            return Ok(ModelCFI::UnsupportedIndex);
+        if index >= *self.num_symbols as usize {
+            return Err(ModelCfiError::UnsupportedIndex(index));
         }
+
         // Since each index is assigned a probability of 1, its CFI can be easily computed:
-        let cfi = Cfi {
-            start: Frequency::new(index)?,
-            end: Frequency::new(index + 1)?,
-            total: self.get_total(),
+        let cfi = {
+            let index = index as CalculationsType;
+            Cfi {
+                // Initializing checks ensure index <= Frequency::max()
+                start: Frequency::new(index)
+                    .expect("Invariant broke, index too large to become frequency"),
+                end: Frequency::new(index + 1)
+                    .expect("Invariant broke, index + 1 too large to become frequency"),
+                total: self.get_total(),
+            }
         };
+        if cfi.start == cfi.end {
+            return Err(ModelCfiError::EmptyCfi { index });
+        }
 
         Ok(match self.escape_idx {
-            Some(escape_idx) if escape_idx == index as usize => ModelCFI::EscapeCfi(cfi),
-            _ => ModelCFI::IndexCfi(cfi),
+            Some(escape_idx) if escape_idx == index => ModelCfi::EscapeCfi(cfi),
+            _ => ModelCfi::IndexCfi(cfi),
         })
     }
 

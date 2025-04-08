@@ -20,7 +20,6 @@ use crate::frequencies::{Frequency, FrequencyTable};
 use crate::models::{Model, ModelCfi, ModelCfiError};
 use anyhow::Result;
 
-// TODO: Consider adding escape support later
 /// A probability model with a custom distribution for indices. This model does **not** support
 /// escape symbols currently.
 pub struct CustomDistributionModel {

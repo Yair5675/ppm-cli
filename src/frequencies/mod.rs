@@ -17,7 +17,7 @@
 
 pub mod mutable_table;
 pub mod static_table;
-mod symbol;
+pub mod symbol;
 #[cfg(test)]
 mod unit_tests;
 

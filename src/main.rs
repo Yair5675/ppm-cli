@@ -21,6 +21,7 @@ mod bit_buffer;
 mod frequencies;
 mod models;
 mod number_types;
+mod parser;
 mod sim;
 
 fn main() {

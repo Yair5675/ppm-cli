@@ -14,17 +14,3 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#![allow(dead_code)]
-
-mod bit_buffer;
-mod frequencies;
-mod interval;
-mod models;
-mod number_types;
-mod parser;
-mod sim;
-
-fn main() {
-    println!("Hello, world!");
-}

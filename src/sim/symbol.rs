@@ -22,7 +22,7 @@ pub const UNIQUE_SYMBOLS_AMOUNT: usize = 258;
 
 /// A symbol in the compression/decompression process, its possible values contain all byte values
 /// plus additional metadata values
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum Symbol {
     /// A byte value
     Byte(u8),

@@ -17,10 +17,11 @@
 
 mod bits_system;
 
-use std::fmt::{Display, Formatter};
 pub use self::bits_system::BitsSystem;
-use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
+use crate::frequencies::Cfi;
+use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
 use anyhow::{anyhow, Result};
+use std::fmt::{Display, Formatter};
 
 /// Boundary of an interval, an integer representation of a fractional value between 0 and 1.
 pub type IntervalBoundary = ConstrainedNum<INTERVAL_BITS>;
@@ -47,6 +48,45 @@ impl Interval {
             high: IntervalBoundary::max(),
             system,
         }
+    }
+
+    /// Updates the model's boundaries based on a Cumulative-Frequency-Interval.
+    ///
+    /// ## Possible Failures
+    /// * If an overflow occurs during the update, an error will be returned.
+    /// * If the interval boundaries resulting from the update break the interval's invariance, an
+    ///   error will be returned.
+    pub fn update(&mut self, cfi: Cfi) -> Result<()> {
+        // Compute the width of the interval:
+        let width: CalculationsType = *self.high - *self.low + 1;
+
+        // Compute the new values for high and low, while watching for possible overflows:
+        let new_low =
+            IntervalBoundary::new(*self.low + (width * *cfi.start).div_euclid(*cfi.total))
+                .map_err(|_| {
+                    anyhow!(
+                        "Overflow occurred while updating interval {} using CFI {:?}",
+                        self,
+                        cfi.clone()
+                    )
+                })?;
+        // Don't forget to decrement high by 1:
+        let new_high =
+            IntervalBoundary::new(*self.low + (width * *cfi.end).div_euclid(*cfi.total) - 1)
+                .map_err(|_| {
+                    anyhow!(
+                        "Overflow occurred while updating interval {} using CFI {:?}",
+                        self,
+                        cfi.clone()
+                    )
+                })?;
+
+        // Set boundaries after checking the invariance:
+        Self::validate_boundaries_invariant(&new_low, &new_high)?;
+        self.low = new_low;
+        self.high = new_high;
+
+        Ok(())
     }
 
     pub fn low(&self) -> IntervalBoundary {

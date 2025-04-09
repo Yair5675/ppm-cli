@@ -60,25 +60,28 @@ impl<SIM: SymbolIndexMapping> CustomDistributionModel<SIM> {
 }
 
 impl<SIM: SymbolIndexMapping> Model for CustomDistributionModel<SIM> {
-    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
-        if index >= self.sim.supported_symbols_count() {
-            Err(ModelCfiError::UnsupportedIndex(index))
-        } else {
-            self.table
-                .get_cfi(index)
-                .map(|cfi| {
-                    if let Some(Symbol::Esc) = self.sim.get_symbol(index) {
-                        ModelCfi::EscapeCfi(cfi)
-                    } else {
-                        ModelCfi::IndexCfi(cfi)
-                    }
-                })
-                .ok_or(ModelCfiError::EmptyCfi { index })
-        }
+    fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError> {
+        let index = self
+            .sim
+            .get_index(&symbol)
+            .ok_or(ModelCfiError::UnsupportedSymbol(symbol))?;
+
+        self.table
+            .get_cfi(index)
+            .map(|cfi| {
+                if symbol.is_escape() {
+                    ModelCfi::EscapeCfi(cfi)
+                } else {
+                    ModelCfi::IndexCfi(cfi)
+                }
+            })
+            .ok_or(ModelCfiError::EmptyCfi { symbol })
     }
 
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
-        self.table.get_index(cumulative_frequency)
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol> {
+        self.table
+            .get_index(cumulative_frequency)
+            .and_then(|index| self.sim.get_symbol(index))
     }
 
     fn get_total(&self) -> Frequency {

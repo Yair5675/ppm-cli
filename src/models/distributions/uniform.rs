@@ -35,11 +35,12 @@ impl<SIM: SymbolIndexMapping> UniformDistributionModel<SIM> {
 }
 
 impl<SIM: SymbolIndexMapping> Model for UniformDistributionModel<SIM> {
-    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
-        // Check index:
-        if index >= self.0.supported_symbols_count() {
-            return Err(ModelCfiError::UnsupportedIndex(index));
-        }
+    fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError> {
+        // Get index:
+        let index = self
+            .0
+            .get_index(&symbol)
+            .ok_or(ModelCfiError::UnsupportedSymbol(symbol))?;
 
         // Since each index is assigned a probability of 1, its CFI can be easily computed:
         let cfi = {
@@ -54,25 +55,20 @@ impl<SIM: SymbolIndexMapping> Model for UniformDistributionModel<SIM> {
                 total: self.get_total(),
             }
         };
-        if cfi.start == cfi.end {
-            return Err(ModelCfiError::EmptyCfi { index });
-        }
 
-        Ok(match self.0.get_symbol(index) {
-            Some(Symbol::Esc) => ModelCfi::EscapeCfi(cfi),
-            _ => ModelCfi::IndexCfi(cfi),
-        })
+        if cfi.start == cfi.end {
+            Err(ModelCfiError::EmptyCfi { symbol })
+        } else if symbol.is_escape() {
+            Ok(ModelCfi::EscapeCfi(cfi))
+        } else {
+            Ok(ModelCfi::IndexCfi(cfi))
+        }
     }
 
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol> {
         // Since each index gets an equal probability, the cumulative frequency is equal to the
         // index itself:
-        let cf = *cumulative_frequency as usize;
-        if cf >= self.0.supported_symbols_count() {
-            None
-        } else {
-            Some(cf)
-        }
+        self.0.get_symbol(*cumulative_frequency as usize)
     }
 
     fn get_total(&self) -> Frequency {

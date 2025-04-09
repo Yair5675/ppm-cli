@@ -18,6 +18,7 @@
 pub mod distributions;
 
 use crate::frequencies::{Cfi, Frequency};
+use crate::sim::symbol::Symbol;
 use anyhow::Result;
 use thiserror::Error;
 
@@ -36,38 +37,38 @@ pub enum ModelCfi {
 /// Errors that might occur when getting a CFI from a model:
 #[derive(Debug, Error)]
 pub enum ModelCfiError {
-    #[error("The model does not support the index \"{0}\", yet it was queried")]
-    UnsupportedIndex(usize),
-    #[error("The CFI of the index \"{index:}\" is empty")]
-    EmptyCfi { index: usize },
+    #[error("The model does not support the symbol \"{0}\", yet it was queried")]
+    UnsupportedSymbol(Symbol),
+    #[error("The CFI of the symbol \"{symbol:}\" is empty")]
+    EmptyCfi { symbol: Symbol },
 }
 
 /// A trait defining the behavior of a probability model
 pub trait Model {
-    /// Computes a Cumulative-Frequency-Interval for a given index.
+    /// Computes a Cumulative-Frequency-Interval for a given symbol.
     ///
     /// ## Parameters:
-    /// * _index_: The index whose CFI will be returned.<br>
+    /// * _symbol_: The symbol whose CFI will be returned.<br>
     ///   Depending on the implementation, the model may return the CFI directly or emit
-    ///   an escape CFI. If the model emits an escape CFI for a non-escape index, it is the
+    ///   an escape CFI. If the model emits an escape CFI for a non-escape symbol, it is the
     ///   responsibility of the caller to repeatedly call the `get_cfi` + `update` methods
     ///   until either an actual CFI or an error is returned.
     /// ## Returns:
-    /// A CFI assigned to that index in the model, or an escape CFI leading to that CFI.
+    /// A CFI assigned to that symbol in the model, or an escape CFI leading to that CFI.
     ///
     /// ## Possible Failures:
-    /// Each model should return `ModelCfiError::UnsupportedIndex` if index is not a part of their
-    /// allowed symbols.
+    /// Each model should return `ModelCfiError::UnsupportedIndex` if _symbol_ is not a part of
+    /// their allowed symbols.
     /// Additionally, each model should return a `ModelCfiError::EmptyCfi` if the CFI assigned to
-    /// the given index is empty (i.e: its start value equals its end value)
-    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError>;
+    /// the given symbol is empty (i.e: its start value equals its end value)
+    fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError>;
 
-    /// Given a cumulative frequency value, the function returns the index whose CFI in the model
+    /// Given a cumulative frequency value, the function returns the symbol whose CFI in the model
     /// contains the given value.
     /// If no adequate CFI is found, None is returned.
     /// # Parameters:
     /// * cumulative_frequency - A cumulative frequency value that lies inside a CFI in the model.
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize>;
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol>;
 
     /// Returns the total cumulative frequencies in the table currently used by the model.
     fn get_total(&self) -> Frequency;
@@ -77,17 +78,17 @@ pub trait Model {
     fn flush(&mut self) {}
 
     /// Updates the model based on some ModelCFI. This function should be called right after calling
-    /// the `model.get_cfi(index)` function, using its output as the current function's
+    /// the `model.get_cfi(symbol)` function, using its output as the current function's
     /// _model_result_ parameter.
     ///
     /// ## Parameters
-    /// * _index_ - The index given to the model's `get_cfi` function.
+    /// * _symbol_ - The symbol given to the model's `get_cfi` function.
     /// * _model_result_: &ModelCFI - The result of calling `get_cfi` with _symbol_.
     ///
     /// ## Returns
     /// Nothing if the update went smoothly, otherwise propagates any update error.
     #[allow(unused_variables)]
-    fn update(&mut self, index: usize, model_result: &ModelCfi) -> Result<()> {
+    fn update(&mut self, symbol: Symbol, model_result: &ModelCfi) -> Result<()> {
         Ok(())
     }
 }

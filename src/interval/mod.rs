@@ -33,3 +33,29 @@ pub struct Interval {
     /// The BitsSystem of the interval
     system: BitsSystem<INTERVAL_BITS>,
 }
+
+impl Interval {
+    /// Forms a new Interval that represents the mathematical interval [0, 1).
+    pub fn full_interval() -> Self {
+        let system: BitsSystem<INTERVAL_BITS> = BitsSystem::new()
+            .expect("For some INTERVAL_BITS was set to less than 2 ಠ_ಠ");
+        
+        Self {
+            low: IntervalBoundary::zero(),
+            high: IntervalBoundary::max(),
+            system
+        }
+    }
+
+    pub fn low(&self) -> IntervalBoundary {
+        self.low
+    }
+
+    pub fn high(&self) -> IntervalBoundary {
+        self.high
+    }
+
+    pub fn system(&self) -> &BitsSystem<INTERVAL_BITS> {
+        &self.system
+    }
+}

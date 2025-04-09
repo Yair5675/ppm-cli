@@ -67,7 +67,7 @@ impl Interval {
                     anyhow!(
                         "Overflow occurred while updating interval {} using CFI {:?}",
                         self,
-                        cfi.clone()
+                        cfi
                     )
                 })?;
         // Don't forget to decrement high by 1:
@@ -77,7 +77,7 @@ impl Interval {
                     anyhow!(
                         "Overflow occurred while updating interval {} using CFI {:?}",
                         self,
-                        cfi.clone()
+                        cfi
                     )
                 })?;
 

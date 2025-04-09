@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::number_types::ConstrainedNum;
+use thiserror::Error;
 
 /// In Arithmetic Coding, we use an integer representation of fractional values to achieve
 /// pseudo-infinite precision with finite bits.
@@ -35,4 +36,48 @@ pub struct BitsSystem<const BITS: u32> {
     one_fourth: ConstrainedNum<BITS>,
     /// Three fourths in the integer representation, 0.110..0:
     three_fourths: ConstrainedNum<BITS>,
+}
+
+impl<const BITS: u32> BitsSystem<BITS> {
+    /// Creates a new bits system. Will fail if _BITS_ is less than 2.
+    pub fn new() -> Result<Self, NotEnoughBitsForSystemError> {
+        // Check the BITS:
+        if BITS < 2 {
+            return Err(NotEnoughBitsForSystemError { bits: BITS });
+        }
+        // Create all constants, ConstraintNum will take care of everything
+        let max = ConstrainedNum::max();
+        let half = max >> 1u8;
+        let one_fourth = half >> 1u8;
+        let three_fourths = half | one_fourth;
+
+        Ok(Self {
+            max,
+            half,
+            one_fourth,
+            three_fourths,
+        })
+    }
+
+    pub fn max(&self) -> ConstrainedNum<BITS> {
+        self.max
+    }
+
+    pub fn half(&self) -> ConstrainedNum<BITS> {
+        self.half
+    }
+
+    pub fn one_fourth(&self) -> ConstrainedNum<BITS> {
+        self.one_fourth
+    }
+
+    pub fn three_fourths(&self) -> ConstrainedNum<BITS> {
+        self.three_fourths
+    }
+}
+
+#[derive(Debug, Error)]
+#[error("Every Bits System must have at least 2 bits ({bits} were given)")]
+pub struct NotEnoughBitsForSystemError {
+    bits: u32,
 }

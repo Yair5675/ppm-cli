@@ -18,8 +18,7 @@
 use crate::frequencies::static_table::StaticFrequencyTable;
 use crate::frequencies::{Frequency, FrequencyTable};
 use crate::models::{Model, ModelCfi, ModelCfiError};
-use crate::sim::symbol::Symbol;
-use crate::sim::SymbolIndexMapping;
+use crate::sim::{Symbol, SymbolIndexMapping};
 use anyhow::{anyhow, Result};
 
 /// A probability model with a custom distribution for indices.

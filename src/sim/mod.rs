@@ -17,7 +17,7 @@
 
 pub mod symbol;
 
-use symbol::{Symbol, UNIQUE_SYMBOLS_AMOUNT};
+pub use symbol::{Symbol, UNIQUE_SYMBOLS_AMOUNT};
 
 pub trait SymbolIndexMapping {
     /// Computes a unique index for _symbol_. If _symbol_ is not supported by the mapping, None is

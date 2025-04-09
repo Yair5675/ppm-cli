@@ -18,8 +18,7 @@
 use crate::frequencies::{Cfi, Frequency};
 use crate::models::{Model, ModelCfi, ModelCfiError};
 use crate::number_types::CalculationsType;
-use crate::sim::symbol::Symbol;
-use crate::sim::SymbolIndexMapping;
+use crate::sim::{Symbol, SymbolIndexMapping};
 
 /// A probability model that assigns each symbol an equal probability
 pub struct UniformDistributionModel<SIM: SymbolIndexMapping>(SIM);

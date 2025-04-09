@@ -18,7 +18,7 @@
 pub mod distributions;
 
 use crate::frequencies::{Cfi, Frequency};
-use crate::sim::symbol::Symbol;
+use crate::sim::Symbol;
 use anyhow::Result;
 use thiserror::Error;
 

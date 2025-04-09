@@ -89,6 +89,24 @@ impl Interval {
         Ok(())
     }
 
+    pub fn get_state(&self) -> IntervalState {
+        match () {
+            // Check convergence:
+            _ if self.low >= self.system.half() => IntervalState::Converging(true),
+            _ if self.high < self.system.half() => IntervalState::Converging(false),
+
+            // Check near-convergence:
+            _ if self.low >= self.system.one_fourth()
+                && self.high < self.system.three_fourths() =>
+            {
+                IntervalState::NearConvergence
+            }
+
+            // Default:
+            _ => IntervalState::NoConvergence,
+        }
+    }
+
     pub fn low(&self) -> IntervalBoundary {
         self.low
     }
@@ -143,4 +161,19 @@ impl Display for Interval {
             bits = INTERVAL_BITS as usize
         )
     }
+}
+
+/// The state of an interval, based on its boundaries
+pub enum IntervalState {
+    /// The interval's lower and upper boundaries both have the same Most-Significant Bit, which
+    /// means the interval converges to a value.<br>
+    /// The value held by the variant is **true** if the MSB is 1, and **false** if it's 0.
+    Converging(bool),
+
+    /// The interval nearly converges - a special case that happens when low = 01XX...X and high =
+    /// 10YY...Y.
+    NearConvergence,
+
+    /// The interval's boundaries do not converge or nearly converge, which is the default state.
+    NoConvergence,
 }

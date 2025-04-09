@@ -17,6 +17,7 @@
 
 mod bits_system;
 
+use std::fmt::{Display, Formatter};
 pub use self::bits_system::BitsSystem;
 use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
 use anyhow::{anyhow, Result};
@@ -89,5 +90,17 @@ impl Interval {
                 )
             )
         }
+    }
+}
+
+impl Display for Interval {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{:0bits$b}, {:0bits$b})",
+            *self.low,
+            *self.high,
+            bits = INTERVAL_BITS as usize
+        )
     }
 }

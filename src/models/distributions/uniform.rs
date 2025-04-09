@@ -17,77 +17,27 @@
 
 use crate::frequencies::{Cfi, Frequency};
 use crate::models::{Model, ModelCfi, ModelCfiError};
-use crate::number_types::{BitsConstraintError, CalculationsType, FREQUENCY_BITS};
-use std::num::NonZero;
-use thiserror::Error;
+use crate::number_types::CalculationsType;
+use crate::sim::symbol::Symbol;
+use crate::sim::SymbolIndexMapping;
 
-/// A probability model that assigns each index an equal probability
-pub struct UniformDistributionModel {
-    /// Number of symbols the model supports, saved as a frequency to avoid converting it to one
-    num_symbols: Frequency,
-    /// The index assigned to the escape symbol
-    escape_idx: Option<usize>,
-}
+/// A probability model that assigns each symbol an equal probability
+pub struct UniformDistributionModel<SIM: SymbolIndexMapping>(SIM);
 
-impl UniformDistributionModel {
-    /// Initializes a UniformDistributionModel without an escape index (see `new_with_escape` if you
-    /// want an escape index).
+impl<SIM: SymbolIndexMapping> UniformDistributionModel<SIM> {
+    /// Initializes a UniformDistributionModel with a given Symbol-Index Mapping.
     ///
     /// ## Parameters:
-    /// * num_symbols - Number of symbols in the model, cannot be zero.
-    ///
-    /// ## Possible Failures:
-    /// If num_symbols is larger than the number of allowed frequencies (i.e: Frequency::max()) an
-    /// error will be returned.
-    pub fn new(num_symbols: NonZero<usize>) -> anyhow::Result<Self, UniformModelInitError> {
-        Ok(Self {
-            num_symbols: Frequency::new(num_symbols.get() as CalculationsType)?,
-            escape_idx: None,
-        })
-    }
-
-    /// Initializes a UniformDistributionModel with an assigned escape index.
-    ///
-    /// ## Parameters:
-    /// * num_symbols - Number of symbols in the model **including the escape symbol**, cannot be 0.
-    /// * escape_idx - The index chosen for the escape symbol.
-    ///
-    /// ## Possible Failures:
-    /// If num_symbols is larger than the number of allowed frequencies (i.e: Frequency::max()) an
-    /// error will be returned.<br>
-    /// If the escape index is larger than or equal to the number of symbols, an error will be
-    /// returned.
-    pub fn new_with_escape(
-        num_symbols: NonZero<usize>,
-        escape_idx: usize,
-    ) -> anyhow::Result<Self, UniformModelInitError> {
-        if escape_idx >= num_symbols.get() {
-            Err(UniformModelInitError::EscapeIndexTooLarge(
-                num_symbols.get(),
-                escape_idx,
-            ))
-        } else {
-            Ok(Self {
-                num_symbols: Frequency::new(num_symbols.get() as CalculationsType)?,
-                escape_idx: Some(escape_idx),
-            })
-        }
+    /// * sim - A mapping between symbols and indices.
+    pub fn new(sim: SIM) -> Self {
+        Self(sim)
     }
 }
 
-#[derive(Debug, Error)]
-pub enum UniformModelInitError {
-    #[error("The number of symbols in the model exceeds Frequency::max()")]
-    TooManySymbolsError(#[from] BitsConstraintError<FREQUENCY_BITS>),
-
-    #[error("The number of symbols in the model is {0}, yet the index chosen for the escape symbol is {1}")]
-    EscapeIndexTooLarge(usize, usize),
-}
-
-impl Model for UniformDistributionModel {
+impl<SIM: SymbolIndexMapping> Model for UniformDistributionModel<SIM> {
     fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
         // Check index:
-        if index >= *self.num_symbols as usize {
+        if index >= self.0.supported_symbols_count() {
             return Err(ModelCfiError::UnsupportedIndex(index));
         }
 
@@ -95,11 +45,12 @@ impl Model for UniformDistributionModel {
         let cfi = {
             let index = index as CalculationsType;
             Cfi {
-                // Initializing checks ensure index <= Frequency::max()
+                // A SIM can have a maximum of UNIQUE_SYMBOLS_AMOUNT which is far less than
+                // Frequency::max()
                 start: Frequency::new(index)
-                    .expect("Invariant broke, index too large to become frequency"),
+                    .expect("SIM invariant broke, index too large to become frequency"),
                 end: Frequency::new(index + 1)
-                    .expect("Invariant broke, index + 1 too large to become frequency"),
+                    .expect("SIM invariant broke, index + 1 too large to become frequency"),
                 total: self.get_total(),
             }
         };
@@ -107,8 +58,8 @@ impl Model for UniformDistributionModel {
             return Err(ModelCfiError::EmptyCfi { index });
         }
 
-        Ok(match self.escape_idx {
-            Some(escape_idx) if escape_idx == index => ModelCfi::EscapeCfi(cfi),
+        Ok(match self.0.get_symbol(index) {
+            Some(Symbol::Esc) => ModelCfi::EscapeCfi(cfi),
             _ => ModelCfi::IndexCfi(cfi),
         })
     }
@@ -116,14 +67,18 @@ impl Model for UniformDistributionModel {
     fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
         // Since each index gets an equal probability, the cumulative frequency is equal to the
         // index itself:
-        if cumulative_frequency >= self.num_symbols {
+        let cf = *cumulative_frequency as usize;
+        if cf >= self.0.supported_symbols_count() {
             None
         } else {
-            Some(*cumulative_frequency as usize)
+            Some(cf)
         }
     }
 
     fn get_total(&self) -> Frequency {
-        self.num_symbols
+        // A SIM can have a maximum of UNIQUE_SYMBOLS_AMOUNT which is far less than
+        // Frequency::max()
+        Frequency::new(self.0.supported_symbols_count() as CalculationsType)
+            .expect("SIM invariant broke, supported symbols count too large to become frequency")
     }
 }

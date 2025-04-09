@@ -35,7 +35,7 @@ impl<SIM: SymbolIndexMapping> CustomDistributionModel<SIM> {
     /// ## Parameters
     /// * sim: A mapping between symbols and indices in _frequencies_.
     /// * frequencies: A slice of symbol frequencies. The mapping between the symbols and the
-    ///                frequencies is determined by _sim_.
+    ///   frequencies is determined by _sim_.
     /// ## Potential Failures
     /// If the sum of the frequencies exceeds Frequency::max(), an error will be returned.
     /// If the length of _frequencies_ does not equal `sim.supported_symbols_count()`, an error will

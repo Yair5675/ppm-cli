@@ -19,6 +19,7 @@
 
 mod bit_buffer;
 mod frequencies;
+mod interval;
 mod models;
 mod number_types;
 mod parser;

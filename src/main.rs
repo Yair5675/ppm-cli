@@ -21,6 +21,7 @@ mod bit_buffer;
 mod frequencies;
 mod models;
 mod number_types;
+mod sim;
 
 fn main() {
     println!("Hello, world!");

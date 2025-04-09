@@ -36,28 +36,6 @@ impl Symbol {
     pub fn is_escape(&self) -> bool {
         matches!(self, Symbol::Esc)
     }
-
-    /// Maps a symbol to an index. It is guaranteed that if two symbols are not the same, they will
-    /// never receive the same index, and that the returned index is within the interval
-    /// `[0, UNIQUE_SYMBOLS_AMOUNT)`.
-    pub const fn get_index(&self) -> usize {
-        match self {
-            Symbol::Byte(byte) => *byte as usize,
-            Symbol::Eof => 256,
-            Symbol::Esc => 257,
-        }
-    }
-
-    /// Constructs the original symbol from its assigned index. If the given index isn't mapped to
-    /// any symbol, None is returned.
-    pub const fn from_index(index: usize) -> Option<Self> {
-        match index {
-            byte @ 0..256 => Some(Symbol::Byte(byte as u8)),
-            256 => Some(Symbol::Eof),
-            257 => Some(Symbol::Esc),
-            _ => None,
-        }
-    }
 }
 
 impl Display for Symbol {

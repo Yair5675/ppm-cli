@@ -18,42 +18,69 @@
 use crate::frequencies::static_table::StaticFrequencyTable;
 use crate::frequencies::{Frequency, FrequencyTable};
 use crate::models::{Model, ModelCfi, ModelCfiError};
-use anyhow::Result;
+use crate::sim::{Symbol, SymbolIndexMapping};
+use anyhow::{anyhow, Result};
 
-/// A probability model with a custom distribution for indices. This model does **not** support
-/// escape symbols currently.
-pub struct CustomDistributionModel {
+/// A probability model with a custom distribution for indices.
+pub struct CustomDistributionModel<SIM: SymbolIndexMapping> {
     /// The table holding all frequencies
     table: StaticFrequencyTable,
-    /// Number of indices in the model:
-    num_symbols: usize,
+    /// A mapping between symbols and indices in the table
+    sim: SIM,
 }
 
-impl CustomDistributionModel {
-    /// Creates a model with a custom distribution for indices. If the sum of the frequencies
-    /// exceeds Frequency::max(), an error will be returned.
-    pub fn new(frequencies: &[Frequency]) -> Result<Self> {
-        Ok(Self {
-            num_symbols: frequencies.len(),
-            table: StaticFrequencyTable::new(frequencies)?,
-        })
-    }
-}
-
-impl Model for CustomDistributionModel {
-    fn get_cfi(&self, index: usize) -> Result<ModelCfi, ModelCfiError> {
-        if index >= self.num_symbols {
-            Err(ModelCfiError::UnsupportedIndex(index))
+impl<SIM: SymbolIndexMapping> CustomDistributionModel<SIM> {
+    /// Creates a model with a custom distribution for indices.
+    ///
+    /// ## Parameters
+    /// * sim: A mapping between symbols and indices in _frequencies_.
+    /// * frequencies: A slice of symbol frequencies. The mapping between the symbols and the
+    ///   frequencies is determined by _sim_.
+    /// ## Potential Failures
+    /// If the sum of the frequencies exceeds Frequency::max(), an error will be returned.
+    /// If the length of _frequencies_ does not equal `sim.supported_symbols_count()`, an error will
+    /// be returned.
+    pub fn new(sim: SIM, frequencies: &[Frequency]) -> Result<Self> {
+        let supported_symbols = sim.supported_symbols_count();
+        if supported_symbols != frequencies.len() {
+            Err(anyhow!(
+                "Given SIM supports a different amount of symbols than provided in frequencies\
+                     (supported = {}, frequencies length = {}",
+                supported_symbols,
+                frequencies.len()
+            ))
         } else {
-            self.table
-                .get_cfi(index)
-                .map(ModelCfi::IndexCfi)
-                .ok_or(ModelCfiError::EmptyCfi { index })
+            Ok(Self {
+                sim,
+                table: StaticFrequencyTable::new(frequencies)?,
+            })
         }
     }
+}
 
-    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<usize> {
-        self.table.get_index(cumulative_frequency)
+impl<SIM: SymbolIndexMapping> Model for CustomDistributionModel<SIM> {
+    fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError> {
+        let index = self
+            .sim
+            .get_index(&symbol)
+            .ok_or(ModelCfiError::UnsupportedSymbol(symbol))?;
+
+        self.table
+            .get_cfi(index)
+            .map(|cfi| {
+                if symbol.is_escape() {
+                    ModelCfi::EscapeCfi(cfi)
+                } else {
+                    ModelCfi::IndexCfi(cfi)
+                }
+            })
+            .ok_or(ModelCfiError::EmptyCfi { symbol })
+    }
+
+    fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol> {
+        self.table
+            .get_index(cumulative_frequency)
+            .and_then(|index| self.sim.get_symbol(index))
     }
 
     fn get_total(&self) -> Frequency {

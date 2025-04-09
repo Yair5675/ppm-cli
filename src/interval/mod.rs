@@ -16,3 +16,20 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod bits_system;
+
+use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
+pub use self::bits_system::BitsSystem;
+
+/// Boundary of an interval, an integer representation of a fractional value between 0 and 1.
+pub type IntervalBoundary = ConstrainedNum<INTERVAL_BITS>;
+
+/// An interval containing values between 0 and 1 using the integer representation for fractional
+/// values.
+pub struct Interval {
+    /// Lower boundary of the interval
+    low: IntervalBoundary,
+    /// Upper boundary of the interval
+    high: IntervalBoundary,
+    /// The BitsSystem of the interval
+    system: BitsSystem<INTERVAL_BITS>,
+}

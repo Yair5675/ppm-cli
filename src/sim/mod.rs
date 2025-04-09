@@ -17,7 +17,7 @@
 
 pub mod symbol;
 
-use symbol::Symbol;
+use symbol::{Symbol, UNIQUE_SYMBOLS_AMOUNT};
 
 pub trait SymbolIndexMapping {
     /// Computes a unique index for _symbol_. If _symbol_ is not supported by the mapping, None is
@@ -32,4 +32,30 @@ pub trait SymbolIndexMapping {
 
     /// Returns the number of symbols the mapping supports.
     fn supported_symbols_count(&self) -> usize;
+}
+
+/// Default implementation of Symbol-Index Mapping, supports every symbol.
+pub struct DefaultSIM;
+
+impl SymbolIndexMapping for DefaultSIM {
+    fn get_index(&self, symbol: &Symbol) -> Option<usize> {
+        match symbol {
+            Symbol::Byte(b) => Some(*b as usize),
+            Symbol::Eof => Some(256),
+            Symbol::Esc => Some(257),
+        }
+    }
+
+    fn get_symbol(&self, index: usize) -> Option<Symbol> {
+        match index {
+            byte @ 0..256 => Some(Symbol::Byte(byte as u8)),
+            256 => Some(Symbol::Eof),
+            257 => Some(Symbol::Esc),
+            _ => None,
+        }
+    }
+
+    fn supported_symbols_count(&self) -> usize {
+        UNIQUE_SYMBOLS_AMOUNT
+    }
 }

@@ -17,8 +17,9 @@
 
 mod bits_system;
 
-use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
 pub use self::bits_system::BitsSystem;
+use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
+use anyhow::{anyhow, Result};
 
 /// Boundary of an interval, an integer representation of a fractional value between 0 and 1.
 pub type IntervalBoundary = ConstrainedNum<INTERVAL_BITS>;
@@ -37,13 +38,13 @@ pub struct Interval {
 impl Interval {
     /// Forms a new Interval that represents the mathematical interval [0, 1).
     pub fn full_interval() -> Self {
-        let system: BitsSystem<INTERVAL_BITS> = BitsSystem::new()
-            .expect("For some INTERVAL_BITS was set to less than 2 ಠ_ಠ");
-        
+        let system: BitsSystem<INTERVAL_BITS> =
+            BitsSystem::new().expect("For some INTERVAL_BITS was set to less than 2 ಠ_ಠ");
+
         Self {
             low: IntervalBoundary::zero(),
             high: IntervalBoundary::max(),
-            system
+            system,
         }
     }
 
@@ -55,7 +56,38 @@ impl Interval {
         self.high
     }
 
+    pub fn set_low(&mut self, new_low: IntervalBoundary) -> Result<()> {
+        Self::validate_boundaries_invariant(&new_low, &self.high)?;
+        self.low = new_low;
+        Ok(())
+    }
+
+    pub fn set_high(&mut self, new_high: IntervalBoundary) -> Result<()> {
+        Self::validate_boundaries_invariant(&self.low, &new_high)?;
+        self.high = new_high;
+        Ok(())
+    }
+
     pub fn system(&self) -> &BitsSystem<INTERVAL_BITS> {
         &self.system
+    }
+
+    /// Validates that setting the interval's boundaries to the proposed ones will not break the
+    /// boundaries invariant `low < high`.
+    fn validate_boundaries_invariant(
+        new_low: &IntervalBoundary,
+        new_high: &IntervalBoundary,
+    ) -> Result<()> {
+        let (low, high) = (**new_low, **new_high);
+        if low < high {
+            Ok(())
+        } else {
+            Err(
+                anyhow!(
+                    "Updating boundaries would break the invariance low < high (new low: {:0bits$b} >= new high {:0bits$b}",
+                    low, high, bits = INTERVAL_BITS as usize
+                )
+            )
+        }
     }
 }

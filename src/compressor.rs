@@ -17,8 +17,9 @@
 
 use crate::bit_buffer::BitBuffer;
 use crate::interval::{Interval, IntervalState};
-use crate::models::Model;
-use anyhow::Result;
+use crate::models::{Model, ModelCfi};
+use crate::sim::Symbol;
+use anyhow::{Context, Result};
 
 pub struct Compressor<'a, M: Model> {
     /// Number of bits that were put aside in case of near-convergence, their value is unknown until
@@ -93,5 +94,35 @@ impl<'a, M: Model> Compressor<'a, M> {
                 .set_low(low)
                 .and_then(|_| self.interval.set_high(high))?;
         }
+    }
+
+    /// Compresses the given symbol using arithmetic coding. This function **CANNOT** be used with
+    /// an escape CFI, as they are only supposed to be used during decompression.
+    ///
+    /// Since arithmetic coding may compress symbols into a number of bits indivisible by 8, the
+    /// function returns an iterator over any COMPLETE bytes of the compression (which may be empty
+    /// if the compression used less than 8 bits).<br>
+    /// To retrieve the leftover bits as a padded byte, call the `flush_bits` function
+    pub fn load_symbol(&mut self, symbol: Symbol) -> Result<impl Iterator<Item = u8>> {
+        let cfi = self.model.get_cfi(symbol)?;
+        self.model.update(symbol, &cfi)?;
+
+        match cfi {
+            ModelCfi::IndexCfi(cfi) => {
+                self.interval
+                    .update(cfi)
+                    .with_context(|| format!("Failed to update interval with symbol {symbol}"))?;
+                self.process_interval_state()?;
+            }
+            // If it's an escape CFI, repeatedly load the symbol:
+            ModelCfi::EscapeCfi(cfi) => {
+                self.interval
+                    .update(cfi)
+                    .with_context(|| format!("Failed to update interval with symbol {symbol}"))?;
+                self.process_interval_state()?;
+                return self.load_symbol(symbol);
+            }
+        }
+        Ok(self.output.get_complete_bytes())
     }
 }

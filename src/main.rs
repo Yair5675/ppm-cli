@@ -18,6 +18,7 @@
 #![allow(dead_code)]
 
 mod bit_buffer;
+mod compressor;
 mod frequencies;
 mod interval;
 mod models;

@@ -19,6 +19,7 @@
 
 mod bit_buffer;
 mod compressor;
+mod decompressor;
 mod frequencies;
 mod interval;
 mod models;

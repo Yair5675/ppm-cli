@@ -112,7 +112,7 @@ impl Interval {
     pub fn high(&self) -> IntervalBoundary {
         self.high
     }
-    
+
     pub fn set_boundaries(
         &mut self,
         new_low: IntervalBoundary,

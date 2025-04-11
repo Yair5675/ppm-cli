@@ -20,7 +20,7 @@ use crate::interval::{Interval, IntervalState};
 use crate::models::{Model, ModelCfi};
 use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
 use crate::sim::Symbol;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, ensure, Result};
 use thiserror::Error;
 
 /// Upper limit for the number of bits the Decompressor will try to read after `bits_iter` will be
@@ -130,9 +130,8 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     /// None is returned.
     fn get_next_byte(&mut self) -> Result<Option<u8>> {
         // Check if we should time out:
-        if self.timeout_bits >= TIMEOUT_BITS {
-            bail!(DecompressionTimeout);
-        }
+        ensure!(self.timeout_bits < TIMEOUT_BITS, DecompressionTimeout);
+
         // Get the original current symbol:
         let cum_freq = Frequency::new(self.calc_cum_freq())?;
         let symbol = self

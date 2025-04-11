@@ -15,10 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::frequencies::Frequency;
 use crate::interval::{Interval, IntervalState};
-use crate::models::Model;
-use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
-use anyhow::Result;
+use crate::models::{Model, ModelCfi};
+use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
+use anyhow::{anyhow, Result};
+use crate::sim::Symbol;
 
 pub struct Decompressor<'a, M: Model, I: Iterator<Item = bool>> {
     /// Iterator over compressed bits
@@ -64,7 +66,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
                     self.load_bits_to_value(1);
                     let low = self.interval.low() << 1u8;
                     let high = (self.interval.high() << 1u8) | 1u8;
-                    
+
                     (low, high)
                 }
                 // Remove second MSB:
@@ -101,6 +103,45 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     fn load_bits_to_value(&mut self, bits_num: u32) {
         for _ in 0..bits_num {
             self.value = (self.value << 1u8) | self.get_next_bit();
+        }
+    }
+
+    /// Calculates the cumulative frequency saved in `value` based on the state of the current
+    /// interval and model.
+    fn calc_cum_freq(&self) -> CalculationsType {
+        (*self.model.get_total() * (*self.value - *self.interval.low() + 1) - 1)
+            / (*self.interval.high() + 1 - *self.interval.low())
+    }
+
+    /// Decompresses the next byte and returns it. If the end of the original bytes was reached,
+    /// None is returned.
+    fn get_next_byte(&mut self) -> Result<Option<u8>> {
+        // Get the original current symbol:
+        let cum_freq = Frequency::new(self.calc_cum_freq())?;
+        let symbol = self
+            .model
+            .get_symbol(cum_freq)
+            .ok_or_else( ||
+                anyhow!("Couldn't decompress this symbol")
+            )?;
+
+        // Follow the original compression:
+        let cfi = self.model.get_cfi(symbol)?;
+        self.model.update(symbol, &cfi)?;
+        let cfi = match cfi {
+            ModelCfi::IndexCfi(cfi) => cfi,
+            ModelCfi::EscapeCfi(cfi) => cfi,
+        };
+
+        self.interval.update(cfi)?;
+        self.process_interval_state()?;
+        
+        // Return the byte representing the symbol, or None if it's an EOF:
+        match symbol {
+            Symbol::Byte(b) => Ok(Some(b)),
+            Symbol::Eof => Ok(None),
+            // If it's an escape symbol, we need to redo the function:
+            Symbol::Esc => self.get_next_byte()
         }
     }
 }

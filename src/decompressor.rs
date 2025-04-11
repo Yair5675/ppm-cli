@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::interval::Interval;
+use crate::interval::{Interval, IntervalState};
 use crate::models::Model;
 use crate::number_types::{ConstrainedNum, INTERVAL_BITS};
+use anyhow::Result;
 
 pub struct Decompressor<'a, M: Model, I: Iterator<Item = bool>> {
     /// Iterator over compressed bits
@@ -45,7 +46,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
             bits_iter: compressed_bits,
             interval: Interval::full_interval(),
             value: ConstrainedNum::zero(),
-            model
+            model,
         };
 
         // Load bits into value:
@@ -53,14 +54,45 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
         this
     }
 
+    /// Processes the state of the interval until it is non-converging
+    pub fn process_interval_state(&mut self) -> Result<()> {
+        loop {
+            // Simply copy the compression stage:
+            let (low, high) = match self.interval.get_state() {
+                // Remove MSB:
+                IntervalState::Converging(_) => {
+                    self.load_bits_to_value(1);
+                    let low = self.interval.low() << 1u8;
+                    let high = (self.interval.high() << 1u8) | 1u8;
+                    
+                    (low, high)
+                }
+                // Remove second MSB:
+                IntervalState::NearConvergence => {
+                    let half = self.interval.system().half();
+                    let low = (self.interval.low() << 1u8) ^ half;
+                    let high = (self.interval.high() << 1u8) | (*half + 1);
+
+                    // Since value < high, it must start with 01 like low:
+                    self.value = ((self.value << 1u8) ^ half) | self.get_next_bit();
+
+                    (low, high)
+                }
+
+                IntervalState::NoConvergence => break Ok(()),
+            };
+            self.interval
+                .set_low(low)
+                .and_then(|_| self.interval.set_high(high))?
+        }
+    }
+
     /// Retrieve the next bit from the iterator as a ConstrainedNum, or returns 0 if `bits_iter` is
     /// empty.
     fn get_next_bit(&mut self) -> ConstrainedNum<INTERVAL_BITS> {
         match self.bits_iter.next() {
-            None => {
-                ConstrainedNum::zero()
-            }
-            Some(b) => b.into()
+            None => ConstrainedNum::zero(),
+            Some(b) => b.into(),
         }
     }
 

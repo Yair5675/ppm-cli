@@ -71,7 +71,7 @@ impl BitBuffer {
         if repetitions > 0 && bit {
             self.current_byte |= u8::MAX << (8 - repetitions);
         }
-        self.current_idx = repetitions;
+        self.current_idx += repetitions;
     }
 
     /// Saves the current byte into the `full_bytes` list, and resets both `current_idx` and

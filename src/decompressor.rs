@@ -19,8 +19,13 @@ use crate::frequencies::Frequency;
 use crate::interval::{Interval, IntervalState};
 use crate::models::{Model, ModelCfi};
 use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
-use anyhow::{anyhow, Result};
 use crate::sim::Symbol;
+use anyhow::{anyhow, bail, Result};
+use thiserror::Error;
+
+/// Upper limit for the number of bits the Decompressor will try to read after `bits_iter` will be
+/// depleted
+const TIMEOUT_BITS: usize = INTERVAL_BITS as usize;
 
 pub struct Decompressor<'a, M: Model, I: Iterator<Item = bool>> {
     /// Iterator over compressed bits
@@ -35,6 +40,9 @@ pub struct Decompressor<'a, M: Model, I: Iterator<Item = bool>> {
 
     /// Probability model, must be the same as the compressor's model for the decompression to work
     model: &'a mut M,
+
+    /// Counter for number of times a bit outside of `bits_iter` was inserted into `value`
+    timeout_bits: usize,
 }
 
 impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
@@ -49,6 +57,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
             interval: Interval::full_interval(),
             value: ConstrainedNum::zero(),
             model,
+            timeout_bits: 0,
         };
 
         // Load bits into value:
@@ -85,7 +94,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
             };
             self.interval
                 .set_low(low)
-                .and_then(|_| self.interval.set_high(high))?
+                .and_then(|_| self.interval.set_high(high))?;
         }
     }
 
@@ -93,7 +102,11 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     /// empty.
     fn get_next_bit(&mut self) -> ConstrainedNum<INTERVAL_BITS> {
         match self.bits_iter.next() {
-            None => ConstrainedNum::zero(),
+            // Add 1 to timeout bits:
+            None => {
+                self.timeout_bits += 1;
+                ConstrainedNum::zero()
+            }
             Some(b) => b.into(),
         }
     }
@@ -116,14 +129,16 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     /// Decompresses the next byte and returns it. If the end of the original bytes was reached,
     /// None is returned.
     fn get_next_byte(&mut self) -> Result<Option<u8>> {
+        // Check if we should time out:
+        if self.timeout_bits >= TIMEOUT_BITS {
+            bail!(DecompressionTimeout);
+        }
         // Get the original current symbol:
         let cum_freq = Frequency::new(self.calc_cum_freq())?;
         let symbol = self
             .model
             .get_symbol(cum_freq)
-            .ok_or_else( ||
-                anyhow!("Couldn't decompress this symbol")
-            )?;
+            .ok_or_else(|| anyhow!("Couldn't decompress this symbol"))?;
 
         // Follow the original compression:
         let cfi = self.model.get_cfi(symbol)?;
@@ -135,13 +150,17 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
 
         self.interval.update(cfi)?;
         self.process_interval_state()?;
-        
+
         // Return the byte representing the symbol, or None if it's an EOF:
         match symbol {
             Symbol::Byte(b) => Ok(Some(b)),
             Symbol::Eof => Ok(None),
             // If it's an escape symbol, we need to redo the function:
-            Symbol::Esc => self.get_next_byte()
+            Symbol::Esc => self.get_next_byte(),
         }
     }
 }
+
+#[derive(Debug, Error)]
+#[error("Decompressor timed out: an EOF was not found in the given bits")]
+pub struct DecompressionTimeout;

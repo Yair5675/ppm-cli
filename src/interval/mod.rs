@@ -81,10 +81,8 @@ impl Interval {
                     )
                 })?;
 
-        // Set boundaries after checking the invariance:
-        Self::validate_boundaries_invariant(&new_low, &new_high)?;
-        self.low = new_low;
-        self.high = new_high;
+        // Set boundaries:
+        self.set_boundaries(new_low, new_high)?;
 
         Ok(())
     }
@@ -113,6 +111,16 @@ impl Interval {
 
     pub fn high(&self) -> IntervalBoundary {
         self.high
+    }
+
+    pub fn set_boundaries(
+        &mut self,
+        new_low: IntervalBoundary,
+        new_high: IntervalBoundary,
+    ) -> Result<()> {
+        Self::validate_boundaries_invariant(&new_low, &new_high)?;
+        (self.low, self.high) = (new_low, new_high);
+        Ok(())
     }
 
     pub fn set_low(&mut self, new_low: IntervalBoundary) -> Result<()> {

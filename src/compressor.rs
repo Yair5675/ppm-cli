@@ -91,9 +91,7 @@ impl<'a, M: Model> Compressor<'a, M> {
                 }
                 IntervalState::NoConvergence => break Ok(()),
             };
-            self.interval
-                .set_low(low)
-                .and_then(|_| self.interval.set_high(high))?;
+            self.interval.set_boundaries(low, high)?;
         }
     }
 

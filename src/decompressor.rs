@@ -92,9 +92,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
 
                 IntervalState::NoConvergence => break Ok(()),
             };
-            self.interval
-                .set_low(low)
-                .and_then(|_| self.interval.set_high(high))?;
+            self.interval.set_boundaries(low, high)?
         }
     }
 

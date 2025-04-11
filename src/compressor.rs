@@ -16,8 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::bit_buffer::BitBuffer;
-use crate::interval::Interval;
+use crate::interval::{Interval, IntervalState};
 use crate::models::Model;
+use anyhow::Result;
 
 pub struct Compressor<'a, M: Model> {
     /// Number of bits that were put aside in case of near-convergence, their value is unknown until
@@ -47,6 +48,50 @@ impl<'a, M: Model> Compressor<'a, M> {
             output: BitBuffer::new(),
             interval: Interval::full_interval(),
             model,
+        }
+    }
+
+    /// When the interval's boundaries finally converge on a bit, the values of all remaining
+    /// outstanding bits are also known (it's the inverse of the given bit).
+    ///
+    /// This helper function outputs all outstanding bits to the bitbuffer, followed by the given
+    /// bit. It is also responsible for setting `self.outstanding_bits` to 0.
+    fn output_with_outstanding(&mut self, bit: bool) {
+        self.output.append_repeated(!bit, self.outstanding_bits);
+        self.outstanding_bits = 0;
+
+        self.output.append(bit);
+    }
+
+    /// Processes the state of the saved interval until it is in a no-convergence state.
+    fn process_interval_state(&mut self) -> Result<()> {
+        // Process the state until the interval is non-converging:
+        loop {
+            let (low, high) = match self.interval.get_state() {
+                IntervalState::Converging(bit) => {
+                    self.output_with_outstanding(bit);
+
+                    // Get rid of the converging bit in the boundaries, shift 1 in for high:
+                    let low = self.interval.low() << 1u8;
+                    let high = (self.interval.high() << 1u8) | 1u8;
+                    (low, high)
+                }
+                IntervalState::NearConvergence => {
+                    // Increase the outstanding bits counter, shift out the second MSBs, and shift
+                    // in a 1 bit for high:
+                    self.outstanding_bits += 1;
+
+                    let half = self.interval.system().half();
+                    let low = (self.interval.low() << 1u8) ^ half;
+                    let high = (self.interval.high() << 1u8) | (*half + 1);
+
+                    (low, high)
+                }
+                IntervalState::NoConvergence => break Ok(()),
+            };
+            self.interval
+                .set_low(low)
+                .and_then(|_| self.interval.set_high(high))?;
         }
     }
 }

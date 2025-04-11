@@ -18,6 +18,7 @@
 use crate::bit_buffer::BitBuffer;
 use crate::interval::{Interval, IntervalState};
 use crate::models::{Model, ModelCfi};
+use crate::number_types::INTERVAL_BITS;
 use crate::sim::Symbol;
 use anyhow::{Context, Result};
 
@@ -102,7 +103,7 @@ impl<'a, M: Model> Compressor<'a, M> {
     /// Since arithmetic coding may compress symbols into a number of bits indivisible by 8, the
     /// function returns an iterator over any COMPLETE bytes of the compression (which may be empty
     /// if the compression used less than 8 bits).<br>
-    /// To retrieve the leftover bits as a padded byte, call the `flush_bits` function
+    /// To retrieve the leftover bits and finish compression, call the `finalize` function
     pub fn load_symbol(&mut self, symbol: Symbol) -> Result<impl Iterator<Item = u8>> {
         let cfi = self.model.get_cfi(symbol)?;
         self.model.update(symbol, &cfi)?;
@@ -124,5 +125,23 @@ impl<'a, M: Model> Compressor<'a, M> {
             }
         }
         Ok(self.output.get_complete_bytes())
+    }
+
+    /// Ends the compression of any bits left over from previous operations, outputting them as an
+    /// iterator of bytes.
+    pub fn finalize(mut self) -> impl Iterator<Item = u8> {
+        // When all symbols are loaded, the possible interval boundaries are:
+        // - [01yyy, 11xxx)
+        // - [00yyy, 11xxx)
+        // - [00yyy, 10xxx)
+        // So we must insert '01' if low is '00', and '10' if low is '01'. Along with those, any
+        // pending near-convergence bits must be inserted as well. A simple way of doing it is just
+        // adding 1 to the near-convergence counter and insert the value of low's second MSB:
+        self.outstanding_bits += 1;
+        self.output_with_outstanding(*((self.interval.low() >> (INTERVAL_BITS - 2)) & 1u8) == 1);
+
+        self.output
+            .get_complete_bytes()
+            .chain(self.output.get_leftover_bits())
     }
 }

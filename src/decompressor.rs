@@ -66,7 +66,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     }
 
     /// Processes the state of the interval until it is non-converging
-    pub fn process_interval_state(&mut self) -> Result<()> {
+    fn process_interval_state(&mut self) -> Result<()> {
         loop {
             // Simply copy the compression stage:
             let (low, high) = match self.interval.get_state() {
@@ -126,7 +126,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
 
     /// Decompresses the next byte and returns it. If the end of the original bytes was reached,
     /// None is returned.
-    fn get_next_byte(&mut self) -> Result<Option<u8>> {
+    pub fn get_next_byte(&mut self) -> Result<Option<u8>> {
         // Check if we should time out:
         ensure!(self.timeout_bits < TIMEOUT_BITS, DecompressionTimeout);
 

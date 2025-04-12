@@ -60,7 +60,7 @@ impl BitBuffer {
     pub fn append_repeated(&mut self, bit: bool, mut repetitions: usize) {
         let bit_repeated = if bit { u8::MAX } else { 0 };
 
-        while self.current_idx + repetitions >= 8 { 
+        while self.current_idx + repetitions >= 8 {
             // Add to the current byte, then save it:
             self.current_byte |= bit_repeated >> self.current_idx;
             repetitions -= 8 - self.current_idx;

@@ -59,10 +59,10 @@ impl<'a, M: Model> Compressor<'a, M> {
     /// This helper function outputs all outstanding bits to the bitbuffer, followed by the given
     /// bit. It is also responsible for setting `self.outstanding_bits` to 0.
     fn output_with_outstanding(&mut self, bit: bool) {
+        self.output.append(bit);
+
         self.output.append_repeated(!bit, self.outstanding_bits);
         self.outstanding_bits = 0;
-
-        self.output.append(bit);
     }
 
     /// Processes the state of the saved interval until it is in a no-convergence state.

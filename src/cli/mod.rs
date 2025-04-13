@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use clap::{Parser, Subcommand, ValueEnum};
+use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
 use std::str::FromStr;
-use clap::ValueEnum;
 
 /// Builtin models the user can use for compression/decompression
 #[derive(Debug, Clone, ValueEnum)]
 pub enum BuiltinModel {
-    Uniform
+    Uniform,
 }
 
 impl FromStr for BuiltinModel {
@@ -30,7 +32,15 @@ impl FromStr for BuiltinModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "uniform" => Ok(Self::Uniform),
-            _ => Err(format!("{} does not match any builtin model", s))
+            _ => Err(format!("{} does not match any builtin model", s)),
+        }
+    }
+}
+
+impl Display for BuiltinModel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuiltinModel::Uniform => write!(f, "uniform"),
         }
     }
 }
@@ -38,7 +48,7 @@ impl FromStr for BuiltinModel {
 #[derive(Debug, Clone)]
 pub enum BuiltinOrCustomModel {
     Builtin(BuiltinModel),
-    Custom(String)
+    Custom(String),
 }
 
 impl FromStr for BuiltinOrCustomModel {
@@ -48,7 +58,45 @@ impl FromStr for BuiltinOrCustomModel {
         match s.parse::<BuiltinModel>() {
             Ok(builtin) => Ok(Self::Builtin(builtin)),
             // TODO: Later validate against an SQL table whether this custom model exists
-            Err(custom) => Ok(Self::Custom(custom))
+            Err(custom) => Ok(Self::Custom(custom)),
         }
     }
+}
+
+impl Display for BuiltinOrCustomModel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BuiltinOrCustomModel::Builtin(builtin) => write!(f, "{}", builtin),
+            BuiltinOrCustomModel::Custom(custom) => write!(f, "{}", custom),
+        }
+    }
+}
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
+pub struct Cli {
+    #[command(subcommand)]
+    commands: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    Compress {
+        /// Path to the file to compress. If not specified, the input data must be piped directly
+        file: Option<PathBuf>,
+
+        /// The probability model used for the compression
+        #[arg(short, long, default_value_t = BuiltinOrCustomModel::Builtin(BuiltinModel::Uniform))]
+        model: BuiltinOrCustomModel,
+    },
+
+    Decompress {
+        /// Path to the file to decompress. If not specified, the input data must be piped directly
+        file: Option<PathBuf>,
+
+        /// The probability model that was used when compressing the file
+        #[arg(short, long, default_value_t = BuiltinOrCustomModel::Builtin(BuiltinModel::Uniform))]
+        model: BuiltinOrCustomModel,
+    },
 }

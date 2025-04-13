@@ -15,62 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use clap::{Parser, Subcommand, ValueEnum};
-use std::fmt::{Display, Formatter};
+mod model_choice;
+
+use self::model_choice::{BuiltinModel, BuiltinOrCustomModel};
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use std::str::FromStr;
-
-/// Builtin models the user can use for compression/decompression
-#[derive(Debug, Clone, ValueEnum)]
-pub enum BuiltinModel {
-    Uniform,
-}
-
-impl FromStr for BuiltinModel {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "uniform" => Ok(Self::Uniform),
-            _ => Err(format!("{} does not match any builtin model", s)),
-        }
-    }
-}
-
-impl Display for BuiltinModel {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BuiltinModel::Uniform => write!(f, "uniform"),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum BuiltinOrCustomModel {
-    Builtin(BuiltinModel),
-    Custom(String),
-}
-
-impl FromStr for BuiltinOrCustomModel {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.parse::<BuiltinModel>() {
-            Ok(builtin) => Ok(Self::Builtin(builtin)),
-            // TODO: Later validate against an SQL table whether this custom model exists
-            Err(custom) => Ok(Self::Custom(custom)),
-        }
-    }
-}
-
-impl Display for BuiltinOrCustomModel {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BuiltinOrCustomModel::Builtin(builtin) => write!(f, "{}", builtin),
-            BuiltinOrCustomModel::Custom(custom) => write!(f, "{}", custom),
-        }
-    }
-}
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

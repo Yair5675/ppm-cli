@@ -18,6 +18,7 @@
 #![allow(dead_code)]
 
 mod bit_buffer;
+mod cli;
 mod compressor;
 mod decompressor;
 mod frequencies;

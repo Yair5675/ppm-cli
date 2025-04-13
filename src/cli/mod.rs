@@ -19,7 +19,10 @@ mod model_choice;
 
 use self::model_choice::{BuiltinModel, BuiltinOrCustomModel};
 use clap::{Parser, Subcommand};
+use std::fs::File;
+use std::io::{BufReader, IsTerminal, Read};
 use std::path::PathBuf;
+use thiserror::Error;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -48,4 +51,33 @@ pub enum Commands {
         #[arg(short, long, default_value_t = BuiltinOrCustomModel::Builtin(BuiltinModel::Uniform))]
         model: BuiltinOrCustomModel,
     },
+}
+
+/// When trying to read input to compress/decompress, the following errors may occur
+#[derive(Debug, Error)]
+pub enum InputFileError {
+    #[error("No path to an input file was provided, nor was it piped into the command")]
+    MissingInputFile,
+    #[error("Failed to read the provided input file: {0}")]
+    IoError(#[from] std::io::Error),
+}
+
+/// Forms a bytes iterator for compression/decompression, either from stdin or from a path to a
+/// file.<br>
+fn get_bytes_iterator(
+    file: Option<PathBuf>,
+) -> Result<Box<dyn Iterator<Item = Result<u8, std::io::Error>>>, InputFileError> {
+    match file {
+        None => {
+            let stdin = std::io::stdin();
+            // If we aren't reading from the terminal, the input is piped into the command:
+            if !stdin.is_terminal() {
+                let reader = BufReader::new(stdin.lock());
+                Ok(Box::new(reader.bytes()))
+            } else {
+                Err(InputFileError::MissingInputFile)
+            }
+        }
+        Some(path) => Ok(Box::new(BufReader::new(File::open(path)?).bytes())),
+    }
 }

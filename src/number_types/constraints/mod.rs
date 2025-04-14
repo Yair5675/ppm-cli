@@ -57,6 +57,15 @@ impl<const BITS: u32> ConstrainedNum<BITS> {
         }
     }
 
+    /// Creates a new ConstrainedNum without checking neither the **BITS** nor the number itself.
+    /// <br>
+    /// It is up to the caller of the function to ensure that:
+    /// 1) 0 < **BITS** <= `CalculationsType::BITS`
+    /// 2) `value` uses at most **BITS** bits.
+    pub unsafe fn new_unchecked(value: CalculationsType) -> Self {
+        Self(value)
+    }
+
     /// Creates a ConstrainedNum holding the value 0.<br>
     /// This operation is always safe since 0 uses no bits.
     pub fn zero() -> Self {

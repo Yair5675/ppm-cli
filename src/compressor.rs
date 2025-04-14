@@ -66,7 +66,7 @@ impl<'a, M: Model> Compressor<'a, M> {
     }
 
     /// Processes the state of the saved interval until it is in a no-convergence state.
-    fn process_interval_state(&mut self) -> Result<()> {
+    fn process_interval_state(&mut self) {
         // Process the state until the interval is non-converging:
         loop {
             let (low, high) = match self.interval.get_state() {
@@ -89,9 +89,14 @@ impl<'a, M: Model> Compressor<'a, M> {
 
                     (low, high)
                 }
-                IntervalState::NoConvergence => break Ok(()),
+                IntervalState::NoConvergence => break,
             };
-            self.interval.set_boundaries(low, high)?;
+            self
+                .interval
+                .set_boundaries(low, high)
+                .expect(
+                    "Removing similar bit or removing second MSB never breaks interval invariance, but it did somehow"
+                );
         }
     }
 
@@ -109,12 +114,12 @@ impl<'a, M: Model> Compressor<'a, M> {
         match cfi {
             ModelCfi::IndexCfi(cfi) => {
                 self.interval.update(cfi);
-                self.process_interval_state()?;
+                self.process_interval_state();
             }
             // If it's an escape CFI, repeatedly load the symbol:
             ModelCfi::EscapeCfi(cfi) => {
                 self.interval.update(cfi);
-                self.process_interval_state()?;
+                self.process_interval_state();
                 return self.load_symbol(symbol);
             }
         }

@@ -66,7 +66,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
     }
 
     /// Processes the state of the interval until it is non-converging
-    fn process_interval_state(&mut self) -> Result<()> {
+    fn process_interval_state(&mut self) {
         loop {
             // Simply copy the compression stage:
             let (low, high) = match self.interval.get_state() {
@@ -90,9 +90,14 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
                     (low, high)
                 }
 
-                IntervalState::NoConvergence => break Ok(()),
+                IntervalState::NoConvergence => break,
             };
-            self.interval.set_boundaries(low, high)?
+            self
+                .interval
+                .set_boundaries(low, high)
+                .expect(
+                    "Removing similar bit or removing second MSB never breaks interval invariance, but it did somehow"
+                );
         }
     }
 
@@ -146,7 +151,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
         };
 
         self.interval.update(cfi);
-        self.process_interval_state()?;
+        self.process_interval_state();
 
         // Return the byte representing the symbol, or None if it's an EOF:
         match symbol {

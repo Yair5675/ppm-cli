@@ -19,6 +19,7 @@ pub mod bit_iter;
 #[cfg(test)]
 mod unit_tests;
 
+use log::{debug, info};
 use std::collections::LinkedList;
 
 /// A buffer dedicated to bit storage
@@ -33,6 +34,7 @@ pub struct BitBuffer {
 impl BitBuffer {
     /// Initializes an empty BitBuffer.
     pub fn new() -> Self {
+        info!("Created new BitBuffer");
         Self {
             full_bytes: LinkedList::new(),
             current_byte: 0,
@@ -42,6 +44,8 @@ impl BitBuffer {
 
     /// Inserts a single bit to the end of the buffer.
     pub fn append(&mut self, bit: bool) {
+        debug!("Appending bit to buffer: {}", if bit { 1 } else { 0 });
+
         if bit {
             self.current_byte |= 1 << (7 - self.current_idx);
         }
@@ -58,6 +62,11 @@ impl BitBuffer {
     ///
     /// Note that specifying 0 repetitions is allowed, and won't change the buffer.
     pub fn append_repeated(&mut self, bit: bool, mut repetitions: usize) {
+        debug!(
+            "Appending bits to buffer: {} {} time(s)",
+            if bit { 1 } else { 0 },
+            repetitions
+        );
         let bit_repeated = if bit { u8::MAX } else { 0 };
 
         while self.current_idx + repetitions >= 8 {
@@ -77,6 +86,7 @@ impl BitBuffer {
     /// Saves the current byte into the `full_bytes` list, and resets both `current_idx` and
     /// `current_idx`.
     fn save_current_byte(&mut self) {
+        debug!("Saving byte into BitBuffer: {:08b}", self.current_byte);
         self.full_bytes.push_back(self.current_byte);
         self.current_byte = 0;
         self.current_idx = 0;
@@ -87,6 +97,10 @@ impl BitBuffer {
     /// To remove ambiguity: **The bytes will not remain in the buffer after calling this
     /// function**.
     pub fn get_complete_bytes(&mut self) -> impl Iterator<Item = u8> {
+        debug!(
+            "Removing {} complete bytes from buffer",
+            self.full_bytes.len()
+        );
         std::mem::take(&mut self.full_bytes).into_iter()
     }
 
@@ -105,6 +119,10 @@ impl BitBuffer {
     ///
     /// Note that this operation does **not** remove those leftover bits from the buffer.
     pub fn get_leftover_bits(&self) -> Option<u8> {
+        debug!(
+            "Leftover bits were requested. Do they exist: {}",
+            self.current_idx > 0
+        );
         if self.current_idx > 0 {
             Some(self.current_byte)
         } else {
@@ -115,6 +133,7 @@ impl BitBuffer {
 
 impl From<&[u8]> for BitBuffer {
     fn from(value: &[u8]) -> Self {
+        debug!("Creating BitBuffer from slice of {} bytes", value.len());
         // Since whose are all full bytes, add them directly to the full_bytes list:
         Self {
             full_bytes: LinkedList::from_iter(value.iter().copied()),
@@ -126,6 +145,7 @@ impl From<&[u8]> for BitBuffer {
 
 impl From<Vec<u8>> for BitBuffer {
     fn from(value: Vec<u8>) -> Self {
+        debug!("Creating BitBuffer from Vec of {} bytes", value.len());
         // Since whose are all full bytes, add them directly to the full_bytes list:
         Self {
             full_bytes: LinkedList::from_iter(value),

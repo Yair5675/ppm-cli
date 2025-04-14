@@ -18,3 +18,6 @@ target/
 
 # Added by cargo
 /target
+
+# Future features:
+todo-features.txt

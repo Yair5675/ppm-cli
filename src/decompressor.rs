@@ -145,7 +145,7 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
             ModelCfi::EscapeCfi(cfi) => cfi,
         };
 
-        self.interval.update(cfi)?;
+        self.interval.update(cfi);
         self.process_interval_state()?;
 
         // Return the byte representing the symbol, or None if it's an EOF:

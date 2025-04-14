@@ -51,40 +51,23 @@ impl Interval {
     }
 
     /// Updates the model's boundaries based on a Cumulative-Frequency-Interval.
-    ///
-    /// ## Possible Failures
-    /// * If an overflow occurs during the update, an error will be returned.
-    /// * If the interval boundaries resulting from the update break the interval's invariance, an
-    ///   error will be returned.
-    pub fn update(&mut self, cfi: Cfi) -> Result<()> {
+    pub fn update(&mut self, cfi: Cfi) {
         // Compute the width of the interval:
         let width: CalculationsType = *self.high - *self.low + 1;
 
-        // Compute the new values for high and low, while watching for possible overflows:
-        let new_low =
-            IntervalBoundary::new(*self.low + (width * *cfi.start).div_euclid(*cfi.total))
-                .map_err(|_| {
-                    anyhow!(
-                        "Overflow occurred while updating interval {} using CFI {:?}",
-                        self,
-                        cfi
-                    )
-                })?;
-        // Don't forget to decrement high by 1:
-        let new_high =
-            IntervalBoundary::new(*self.low + (width * *cfi.end).div_euclid(*cfi.total) - 1)
-                .map_err(|_| {
-                    anyhow!(
-                        "Overflow occurred while updating interval {} using CFI {:?}",
-                        self,
-                        cfi
-                    )
-                })?;
-
-        // Set boundaries:
-        self.set_boundaries(new_low, new_high)?;
-
-        Ok(())
+        // ASSUMPTION - cfi.start < cfi.end <= cfi.total
+        // In that case, updating boundaries will never cause overflow, since it will compute a
+        // value smaller than or equal to the current high (at most), which must be valid.
+        // Moreover, it will not break the invariance low < high since cfi.start < cfi.end.
+        unsafe {
+            let new_low = IntervalBoundary::new_unchecked(
+                *self.low + (width * *cfi.start).div_euclid(*cfi.total),
+            );
+            let new_high = IntervalBoundary::new_unchecked(
+                *self.low + (width * *cfi.end).div_euclid(*cfi.total) - 1,
+            );
+            (self.low, self.high) = (new_low, new_high);
+        }
     }
 
     pub fn get_state(&self) -> IntervalState {

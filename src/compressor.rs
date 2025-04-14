@@ -20,7 +20,7 @@ use crate::interval::{Interval, IntervalState};
 use crate::models::{Model, ModelCfi};
 use crate::number_types::INTERVAL_BITS;
 use crate::sim::Symbol;
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 pub struct Compressor<'a, M: Model> {
     /// Number of bits that were put aside in case of near-convergence, their value is unknown until
@@ -108,16 +108,12 @@ impl<'a, M: Model> Compressor<'a, M> {
 
         match cfi {
             ModelCfi::IndexCfi(cfi) => {
-                self.interval
-                    .update(cfi)
-                    .with_context(|| format!("Failed to update interval with symbol {symbol}"))?;
+                self.interval.update(cfi);
                 self.process_interval_state()?;
             }
             // If it's an escape CFI, repeatedly load the symbol:
             ModelCfi::EscapeCfi(cfi) => {
-                self.interval
-                    .update(cfi)
-                    .with_context(|| format!("Failed to update interval with symbol {symbol}"))?;
+                self.interval.update(cfi);
                 self.process_interval_state()?;
                 return self.load_symbol(symbol);
             }

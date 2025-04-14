@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::bit_buffer::BitBuffer;
+use log::debug;
 
 /// An iterator over bits. Can be derived from BitBuffer or a slice of bytes.
 pub struct BitIterator<'a> {
@@ -45,6 +46,7 @@ impl Iterator for BitIterator<'_> {
                 self.current_idx = 0;
                 self.current_byte = self.full_bytes_iter.next();
             }
+            debug!("Next bit in iterator: {}", if bit { 1 } else { 0 });
             return Some(bit);
         }
 
@@ -58,6 +60,7 @@ impl Iterator for BitIterator<'_> {
             if self.current_idx < num_bits {
                 let _ = self.incomplete_byte.insert((byte, num_bits));
             }
+            debug!("Next bit in iterator: {}", if bit { 1 } else { 0 });
             Some(bit)
         } else {
             None

@@ -21,6 +21,7 @@ use crate::models::{Model, ModelCfi};
 use crate::number_types::INTERVAL_BITS;
 use crate::sim::Symbol;
 use anyhow::Result;
+use log::debug;
 
 pub struct Compressor<'a, M: Model> {
     /// Number of bits that were put aside in case of near-convergence, their value is unknown until
@@ -108,6 +109,7 @@ impl<'a, M: Model> Compressor<'a, M> {
     /// if the compression used less than 8 bits).<br>
     /// To retrieve the leftover bits and finish compression, call the `finalize` function
     pub fn load_symbol(&mut self, symbol: Symbol) -> Result<impl Iterator<Item = u8>> {
+        debug!("Compressor: Compressing symbol {}", symbol);
         let cfi = self.model.get_cfi(symbol)?;
         self.model.update(symbol, &cfi)?;
 
@@ -136,6 +138,7 @@ impl<'a, M: Model> Compressor<'a, M> {
         // So we must insert '01' if low is '00', and '10' if low is '01'. Along with those, any
         // pending near-convergence bits must be inserted as well. A simple way of doing it is just
         // adding 1 to the near-convergence counter and insert the value of low's second MSB:
+        debug!("Finalizing compressor");
         self.outstanding_bits += 1;
         self.output_with_outstanding(*((self.interval.low() >> (INTERVAL_BITS - 2)) & 1u8) == 1);
 

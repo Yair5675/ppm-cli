@@ -17,6 +17,7 @@
 
 use super::{Cfi, Frequency, FrequencyTable};
 use anyhow::{Context, Result};
+use log::{debug, error};
 
 /// A frequency table whose values cannot be updated after initialization
 pub struct StaticFrequencyTable {
@@ -39,9 +40,11 @@ impl StaticFrequencyTable {
         for (idx, frequency) in frequencies.iter().enumerate() {
             // Calculate cumulative and catch any overflow:
             accum += **frequency;
-            cum_freqs.push(Frequency::new(accum).context(format!(
-                "Failed to create static table, index {idx} caused an overflow"
-            ))?);
+            cum_freqs.push(Frequency::new(accum).with_context(|| {
+                let msg = format!("Failed to create static table, index {idx} caused an overflow");
+                error!("StaticTable: {}", msg);
+                msg
+            })?);
         }
 
         Ok(Self {
@@ -77,6 +80,7 @@ impl FrequencyTable for StaticFrequencyTable {
 
         while left <= right {
             let middle = (left + right) >> 1;
+            debug!("StaticTable: Binary Searching for index, middle={}", middle);
 
             // Check lower bound:
             if cumulative_frequency < self.cum_freqs[middle] {

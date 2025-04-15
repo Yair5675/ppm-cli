@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::number_types::ConstrainedNum;
+use log::info;
 use thiserror::Error;
 
 /// In Arithmetic Coding, we use an integer representation of fractional values to achieve
@@ -50,6 +51,8 @@ impl<const BITS: u32> BitsSystem<BITS> {
         let half = max >> 1u8;
         let one_fourth = half >> 1u8;
         let three_fourths = half | one_fourth;
+
+        info!("Creating a Bits System of {} bits", BITS);
 
         Ok(Self {
             max,

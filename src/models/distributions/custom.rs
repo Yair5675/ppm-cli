@@ -20,6 +20,7 @@ use crate::frequencies::{Frequency, FrequencyTable};
 use crate::models::{Model, ModelCfi, ModelCfiError};
 use crate::sim::{Symbol, SymbolIndexMapping};
 use anyhow::{anyhow, Result};
+use log::{error, warn};
 
 /// A probability model with a custom distribution for indices.
 pub struct CustomDistributionModel<SIM: SymbolIndexMapping> {
@@ -43,12 +44,14 @@ impl<SIM: SymbolIndexMapping> CustomDistributionModel<SIM> {
     pub fn new(sim: SIM, frequencies: &[Frequency]) -> Result<Self> {
         let supported_symbols = sim.supported_symbols_count();
         if supported_symbols != frequencies.len() {
-            Err(anyhow!(
+            let msg = format!(
                 "Given SIM supports a different amount of symbols than provided in frequencies\
                      (supported = {}, frequencies length = {}",
                 supported_symbols,
                 frequencies.len()
-            ))
+            );
+            error!("{}", msg);
+            Err(anyhow!(msg))
         } else {
             Ok(Self {
                 sim,
@@ -60,10 +63,13 @@ impl<SIM: SymbolIndexMapping> CustomDistributionModel<SIM> {
 
 impl<SIM: SymbolIndexMapping> Model for CustomDistributionModel<SIM> {
     fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError> {
-        let index = self
-            .sim
-            .get_index(&symbol)
-            .ok_or(ModelCfiError::UnsupportedSymbol(symbol))?;
+        let index = self.sim.get_index(&symbol).ok_or_else(|| {
+            error!(
+                "Custom Distribution Model: Unsupported symbol \"{}\" given",
+                symbol
+            );
+            ModelCfiError::UnsupportedSymbol(symbol)
+        })?;
 
         self.table
             .get_cfi(index)
@@ -74,7 +80,13 @@ impl<SIM: SymbolIndexMapping> Model for CustomDistributionModel<SIM> {
                     ModelCfi::IndexCfi(cfi)
                 }
             })
-            .ok_or(ModelCfiError::EmptyCfi { symbol })
+            .ok_or_else(|| {
+                warn!(
+                    "Custom Distribution Model: Empty CFI assigned to queried symbol {}",
+                    symbol
+                );
+                ModelCfiError::EmptyCfi { symbol }
+            })
     }
 
     fn get_symbol(&self, cumulative_frequency: Frequency) -> Option<Symbol> {

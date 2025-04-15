@@ -21,6 +21,7 @@ pub use self::bits_system::BitsSystem;
 use crate::frequencies::Cfi;
 use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
 use anyhow::{anyhow, Result};
+use log::{debug, error};
 use std::fmt::{Display, Formatter};
 
 /// Boundary of an interval, an integer representation of a fractional value between 0 and 1.
@@ -41,7 +42,7 @@ impl Interval {
     /// Forms a new Interval that represents the mathematical interval [0, 1).
     pub fn full_interval() -> Self {
         let system: BitsSystem<INTERVAL_BITS> =
-            BitsSystem::new().expect("For some INTERVAL_BITS was set to less than 2 ಠ_ಠ");
+            BitsSystem::new().expect("For some reason INTERVAL_BITS was set to less than 2 ಠ_ಠ");
 
         Self {
             low: IntervalBoundary::zero(),
@@ -52,6 +53,7 @@ impl Interval {
 
     /// Updates the model's boundaries based on a Cumulative-Frequency-Interval.
     pub fn update(&mut self, cfi: Cfi) {
+        debug!("Interval: Updating with CFI {:?}", cfi);
         // Compute the width of the interval:
         let width: CalculationsType = *self.high - *self.low + 1;
 
@@ -67,6 +69,7 @@ impl Interval {
                 *self.low + (width * *cfi.end).div_euclid(*cfi.total) - 1,
             );
             (self.low, self.high) = (new_low, new_high);
+            debug!("Interval: Post-update interval: {}", self)
         }
     }
 
@@ -103,6 +106,7 @@ impl Interval {
     ) -> Result<()> {
         Self::validate_boundaries_invariant(&new_low, &new_high)?;
         (self.low, self.high) = (new_low, new_high);
+        debug!("Interval: Interval with new boundaries: {}", self);
         Ok(())
     }
 
@@ -132,12 +136,12 @@ impl Interval {
         if low < high {
             Ok(())
         } else {
-            Err(
-                anyhow!(
-                    "Updating boundaries would break the invariance low < high (new low: {:0bits$b} >= new high {:0bits$b}",
-                    low, high, bits = INTERVAL_BITS as usize
-                )
-            )
+            let msg = format!(
+                "Updating boundaries would break the invariance low < high (new low: {:0bits$b} >= new high {:0bits$b}",
+                low, high, bits = INTERVAL_BITS as usize
+            );
+            error!("{}", msg);
+            Err(anyhow!(msg))
         }
     }
 }

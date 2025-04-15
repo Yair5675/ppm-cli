@@ -21,6 +21,7 @@ use crate::models::{Model, ModelCfi};
 use crate::number_types::{CalculationsType, ConstrainedNum, INTERVAL_BITS};
 use crate::sim::Symbol;
 use anyhow::{anyhow, ensure, Result};
+use log::debug;
 use thiserror::Error;
 
 /// Upper limit for the number of bits the Decompressor will try to read after `bits_iter` will be
@@ -137,6 +138,10 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
 
         // Get the original current symbol:
         let cum_freq = Frequency::new(self.calc_cum_freq())?;
+        debug!(
+            "Decompressor: Decompressing cumulative frequency - {}",
+            cum_freq
+        );
         let symbol = self
             .model
             .get_symbol(cum_freq)

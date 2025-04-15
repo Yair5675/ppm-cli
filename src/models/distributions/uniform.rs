@@ -19,6 +19,7 @@ use crate::frequencies::{Cfi, Frequency};
 use crate::models::{Model, ModelCfi, ModelCfiError};
 use crate::number_types::CalculationsType;
 use crate::sim::{Symbol, SymbolIndexMapping};
+use log::{error, warn};
 
 /// A probability model that assigns each symbol an equal probability
 pub struct UniformDistributionModel<SIM: SymbolIndexMapping>(SIM);
@@ -36,10 +37,13 @@ impl<SIM: SymbolIndexMapping> UniformDistributionModel<SIM> {
 impl<SIM: SymbolIndexMapping> Model for UniformDistributionModel<SIM> {
     fn get_cfi(&self, symbol: Symbol) -> Result<ModelCfi, ModelCfiError> {
         // Get index:
-        let index = self
-            .0
-            .get_index(&symbol)
-            .ok_or(ModelCfiError::UnsupportedSymbol(symbol))?;
+        let index = self.0.get_index(&symbol).ok_or_else(|| {
+            error!(
+                "Uniform Distribution Model: Unsupported symbol \"{}\" given",
+                symbol
+            );
+            ModelCfiError::UnsupportedSymbol(symbol)
+        })?;
 
         // Since each index is assigned a probability of 1, its CFI can be easily computed:
         let cfi = {
@@ -56,6 +60,10 @@ impl<SIM: SymbolIndexMapping> Model for UniformDistributionModel<SIM> {
         };
 
         if cfi.start == cfi.end {
+            warn!(
+                "Uniform Distribution Model: Empty CFI assigned to queried symbol {}",
+                symbol
+            );
             Err(ModelCfiError::EmptyCfi { symbol })
         } else if symbol.is_escape() {
             Ok(ModelCfi::EscapeCfi(cfi))

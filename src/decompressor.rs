@@ -138,7 +138,10 @@ impl<'a, M: Model, I: Iterator<Item = bool>> Decompressor<'a, M, I> {
 
         // Get the original current symbol:
         let cum_freq = Frequency::new(self.calc_cum_freq())?;
-        debug!("Decompressor: Decompressing cumulative frequency - {}", cum_freq);
+        debug!(
+            "Decompressor: Decompressing cumulative frequency - {}",
+            cum_freq
+        );
         let symbol = self
             .model
             .get_symbol(cum_freq)

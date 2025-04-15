@@ -22,6 +22,7 @@ use super::{Cfi, Frequency, FrequencyTable};
 
 use crate::number_types::CalculationsType;
 use anyhow::{Context, Result};
+use log::{debug, error, warn};
 
 /// A frequency table which can be mutated
 pub struct MutableFrequencyTable {
@@ -46,8 +47,11 @@ impl MutableFrequencyTable {
                 .map(|f| **f)
                 .collect::<Vec<CalculationsType>>(),
         );
-        let total = Frequency::new(fenwick.get_sum(fenwick.len()))
-            .context("Failed to create mutable table, overflow occurred for total")?;
+        let total = Frequency::new(fenwick.get_sum(fenwick.len())).with_context(|| {
+            let msg = "Overflow occurred for total frequencies when creating MutableFrequencyTable";
+            error!("{}", msg);
+            msg
+        })?;
 
         Ok(Self { fenwick, total })
     }
@@ -57,10 +61,13 @@ impl MutableFrequencyTable {
     /// If the result of that addition exceeds the bits allowed for a frequency, it is not saved in
     /// the table.
     pub fn add_frequency(&mut self, index: usize, amount: Frequency) {
+        debug!("MutableTable: Adding {} to index {}", *amount, index);
         // Since `total` is the largest, if adding to it fails adding to anything else will too:
         if let Ok(new_total) = Frequency::new(*self.total + *amount) {
             self.total = new_total;
             self.fenwick.add(index, *amount);
+        } else {
+            warn!("MutableTable: Failed to add to index (total overflow)")
         }
     }
 }
@@ -95,6 +102,10 @@ impl FrequencyTable for MutableFrequencyTable {
 
         while left <= right {
             let middle = (left + right) >> 1;
+            debug!(
+                "MutableTable: Binary Searching for index, middle={}",
+                middle
+            );
 
             // Check lower bound:
             if cumulative_frequency < self.fenwick.get_sum(middle) {

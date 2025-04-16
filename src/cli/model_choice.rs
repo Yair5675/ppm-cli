@@ -15,7 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::models::distributions::uniform::UniformDistributionModel;
+use crate::models::Model;
 use crate::parser::{ByteParser, Parser};
+use crate::sim::DefaultSIM;
 use clap::ValueEnum;
 use std::fmt::{Display, Formatter};
 
@@ -26,6 +29,12 @@ pub enum BuiltinModel {
 }
 
 impl BuiltinModel {
+    pub fn get_model(&self) -> impl Model {
+        match self {
+            BuiltinModel::Uniform => UniformDistributionModel::new(DefaultSIM),
+        }
+    }
+
     pub fn get_parser(&self) -> impl Parser {
         match self {
             BuiltinModel::Uniform => ByteParser,

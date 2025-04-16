@@ -141,3 +141,16 @@ where
             }
         });
 }
+
+/// Converts codec args to input bytes, parser and probability model.<br>
+fn parse_codec_args(CodecArgs { file, bit_mode, .. }: &CodecArgs)
+                    -> anyhow::Result<(impl Iterator<Item=Result<u8, std::io::Error>>, Box<dyn crate::parser::Parser>)>
+{
+    let bytes = get_bytes_iterator(file.as_ref())?;
+    let parser: Box<dyn crate::parser::Parser> = if *bit_mode {
+        Box::new(crate::parser::BitParser)
+    } else {
+        Box::new(crate::parser::ByteParser)
+    };
+    Ok((bytes, parser))
+}

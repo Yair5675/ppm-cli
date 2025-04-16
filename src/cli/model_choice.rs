@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::parser::{ByteParser, Parser};
 use clap::ValueEnum;
 use std::fmt::{Display, Formatter};
 
@@ -22,6 +23,14 @@ use std::fmt::{Display, Formatter};
 #[derive(Debug, Clone, ValueEnum)]
 pub enum BuiltinModel {
     Uniform,
+}
+
+impl BuiltinModel {
+    pub fn get_parser(&self) -> impl Parser {
+        match self {
+            BuiltinModel::Uniform => ByteParser,
+        }
+    }
 }
 
 impl Display for BuiltinModel {

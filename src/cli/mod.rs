@@ -17,18 +17,17 @@
 
 mod model_choice;
 
-use self::model_choice::{BuiltinModel, BuiltinOrCustomModel};
+use self::model_choice::BuiltinModel;
 use crate::compressor::Compressor;
 use crate::models::{Model, ModelCfiError};
-use crate::parser::Parser;
-use clap::Subcommand;
+use clap::{Parser, Subcommand};
 use log::{debug, error, info};
 use std::fs::File;
 use std::io::{BufReader, IsTerminal, Read, Write};
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
@@ -42,18 +41,28 @@ pub enum Commands {
         /// Path to the file to compress. If not specified, the input data must be piped directly
         file: Option<PathBuf>,
 
-        /// The probability model used for the compression
-        #[arg(short, long, default_value_t = BuiltinOrCustomModel::Builtin(BuiltinModel::Uniform))]
-        model: BuiltinOrCustomModel,
+        /// Builtin probability models used for the compression
+        #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
+        model: BuiltinModel,
+
+        /// Custom probability models defined by the user, cannot be used with the --model option
+        /// (which provides builtin models)
+        #[arg(long, group = "models")]
+        custom_model: Option<String>,
     },
 
     Decompress {
         /// Path to the file to decompress. If not specified, the input data must be piped directly
         file: Option<PathBuf>,
 
-        /// The probability model that was used when compressing the file
-        #[arg(short, long, default_value_t = BuiltinOrCustomModel::Builtin(BuiltinModel::Uniform))]
-        model: BuiltinOrCustomModel,
+        /// Builtin probability models used for the compression
+        #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
+        model: BuiltinModel,
+
+        /// Custom probability models defined by the user, cannot be used with the --model option
+        /// (which provides builtin models)
+        #[arg(long, group = "models")]
+        custom_model: Option<String>,
     },
 }
 
@@ -102,7 +111,7 @@ fn handle_compression_error(compression_err: anyhow::Error) {
 fn compress<I, P, M>(bytes: I, mut compressor: Compressor<M>, parser: P)
 where
     I: Iterator<Item = Result<u8, std::io::Error>>,
-    P: Parser,
+    P: crate::parser::Parser,
     M: Model,
 {
     info!("Compressing input stream. Unsupported or invalid symbols will be skipped");

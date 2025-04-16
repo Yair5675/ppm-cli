@@ -75,7 +75,7 @@ pub enum InputFileError {
 /// Forms a bytes iterator for compression/decompression, either from stdin or from a path to a
 /// file.<br>
 fn get_bytes_iterator(
-    file: Option<PathBuf>,
+    file: Option<&PathBuf>,
 ) -> Result<Box<dyn Iterator<Item = Result<u8, std::io::Error>>>, InputFileError> {
     match file {
         None => {

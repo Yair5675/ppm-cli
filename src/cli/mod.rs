@@ -48,6 +48,12 @@ pub struct CodecArgs {
     /// Path to the file that will be read. If not specified, the input data must be piped directly
     file: Option<PathBuf>,
 
+    /// If set, the CLI will compress input **bit-by-bit**, which in some cases will result in
+    /// better compression ratios.
+    /// By default, this option is false, and the input will be read **byte-by-byte**.
+    #[arg(short, long, default_value_t = false)]
+    bit_mode: bool,
+    
     /// Builtin probability models
     #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
     model: BuiltinModel,

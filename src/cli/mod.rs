@@ -21,7 +21,7 @@ use std::error::Error;
 use self::model_choice::BuiltinModel;
 use crate::compressor::Compressor;
 use crate::models::{Model, ModelCfiError};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use log::{debug, error, info};
 use std::fs::File;
 use std::io::{BufReader, IsTerminal, Read, Write};
@@ -38,33 +38,24 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Compress {
-        /// Path to the file to compress. If not specified, the input data must be piped directly
-        file: Option<PathBuf>,
+    Compress(CodecArgs),
+    Decompress(CodecArgs),
+}
 
-        /// Builtin probability models used for the compression
-        #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
-        model: BuiltinModel,
+/// CLI arguments for compression/decompression
+#[derive(Args)]
+pub struct CodecArgs {
+    /// Path to the file that will be read. If not specified, the input data must be piped directly
+    file: Option<PathBuf>,
 
-        /// Custom probability models defined by the user, cannot be used with the --model option
-        /// (which provides builtin models)
-        #[arg(long, group = "models")]
-        custom_model: Option<String>,
-    },
+    /// Builtin probability models
+    #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
+    model: BuiltinModel,
 
-    Decompress {
-        /// Path to the file to decompress. If not specified, the input data must be piped directly
-        file: Option<PathBuf>,
-
-        /// Builtin probability models used for the compression
-        #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
-        model: BuiltinModel,
-
-        /// Custom probability models defined by the user, cannot be used with the --model option
-        /// (which provides builtin models)
-        #[arg(long, group = "models")]
-        custom_model: Option<String>,
-    },
+    /// Custom probability models defined by the user, cannot be used with the --model option
+    /// (which provides builtin models)
+    #[arg(long, group = "models")]
+    custom_model: Option<String>,
 }
 
 /// When trying to read input to compress/decompress, the following errors may occur

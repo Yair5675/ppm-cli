@@ -39,7 +39,9 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Compresses a file/piped data using arithmetic coding
     Compress(CodecArgs),
+    /// Decompresses a file/piped data which was compressed using the `compress` command
     Decompress(CodecArgs),
 }
 

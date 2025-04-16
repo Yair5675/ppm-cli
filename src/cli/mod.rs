@@ -17,7 +17,6 @@
 
 mod model_choice;
 
-use std::error::Error;
 use self::model_choice::BuiltinModel;
 use crate::compressor::Compressor;
 use crate::models::{Model, ModelCfiError};
@@ -53,7 +52,7 @@ pub struct CodecArgs {
     /// By default, this option is false, and the input will be read **byte-by-byte**.
     #[arg(short, long, default_value_t = false)]
     bit_mode: bool,
-    
+
     /// Builtin probability models
     #[arg(long, group = "models", default_value_t = BuiltinModel::Uniform)]
     model: BuiltinModel,
@@ -142,16 +141,3 @@ where
             }
         });
 }
-
-/// Given a custom model's name, the function retrieves a model and parser from the saved models
-/// corresponding to this name
-fn get_custom_model<M, P, E>(_model_name: &str) -> Result<(M, P), E>
-where
-    M: Model,
-    P: crate::parser::Parser,
-    E: Error
-{
-    todo!("Retrieve a model from an SQL table and return it and its parser")
-}
-
-

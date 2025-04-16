@@ -18,8 +18,10 @@
 mod model_choice;
 
 use self::model_choice::BuiltinModel;
+use crate::cli::model_choice::UserModel;
 use crate::compressor::Compressor;
 use crate::models::{Model, ModelCfiError};
+use crate::sim::DefaultSIM;
 use clap::{Args, Parser, Subcommand};
 use log::{debug, error, info};
 use std::fs::File;
@@ -143,9 +145,12 @@ where
 }
 
 /// Converts codec args to input bytes, parser and probability model.<br>
-fn parse_codec_args(CodecArgs { file, bit_mode, .. }: &CodecArgs)
-                    -> anyhow::Result<(impl Iterator<Item=Result<u8, std::io::Error>>, Box<dyn crate::parser::Parser>)>
-{
+fn parse_codec_args(
+    CodecArgs { file, bit_mode, .. }: &CodecArgs,
+) -> anyhow::Result<(
+    impl Iterator<Item = Result<u8, std::io::Error>>,
+    Box<dyn crate::parser::Parser>,
+)> {
     let bytes = get_bytes_iterator(file.as_ref())?;
     let parser: Box<dyn crate::parser::Parser> = if *bit_mode {
         Box::new(crate::parser::BitParser)
@@ -153,4 +158,30 @@ fn parse_codec_args(CodecArgs { file, bit_mode, .. }: &CodecArgs)
         Box::new(crate::parser::ByteParser)
     };
     Ok((bytes, parser))
+}
+
+/// Runs the CLI
+pub fn run() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    match cli.commands {
+        Commands::Compress(args) => {
+            let (bytes, parser) = parse_codec_args(&args)?;
+            // Compress according to the model:
+            match args.custom_model {
+                None => {
+                    let mut model = args.model.get_model();
+                    let compressor = Compressor::new(&mut model);
+                    compress(bytes, compressor, parser);
+                }
+                Some(model_name) => {
+                    let mut user_model: UserModel<DefaultSIM> = UserModel::from_name(&model_name)?;
+                    let compressor = Compressor::new(user_model.get_model());
+                    compress(bytes, compressor, parser);
+                }
+            }
+        }
+        Commands::Decompress(CodecArgs { .. }) => {}
+    }
+    Ok(())
 }

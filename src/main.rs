@@ -28,7 +28,15 @@ mod number_types;
 mod parser;
 mod sim;
 
-fn main() {
+use log::error;
+use std::process::ExitCode;
+
+fn main() -> ExitCode {
     env_logger::init();
-    println!("Hello, world!");
+    if let Err(e) = cli::run() {
+        error!("{}", e);
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }

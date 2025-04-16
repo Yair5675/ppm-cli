@@ -23,6 +23,12 @@ pub trait Parser {
     fn parse_byte(&self, byte: u8) -> Vec<Symbol>;
 }
 
+impl<P: Parser + ?Sized> Parser for Box<P> {
+    fn parse_byte(&self, byte: u8) -> Vec<Symbol> {
+        (**self).parse_byte(byte)
+    }
+}
+
 /// Regular parser - parses bytes directly into a `Symbol::Byte`
 pub struct ByteParser;
 impl Parser for ByteParser {

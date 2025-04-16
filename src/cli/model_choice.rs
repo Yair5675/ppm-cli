@@ -15,9 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::models::distributions::{
+    custom::CustomDistributionModel, uniform::UniformDistributionModel,
+};
+use crate::models::Model;
+use crate::parser::{ByteParser, Parser};
+use crate::sim::{DefaultSIM, SymbolIndexMapping};
+use anyhow::Result;
 use clap::ValueEnum;
 use std::fmt::{Display, Formatter};
-use std::str::FromStr;
 
 /// Builtin models the user can use for compression/decompression
 #[derive(Debug, Clone, ValueEnum)]
@@ -25,13 +31,16 @@ pub enum BuiltinModel {
     Uniform,
 }
 
-impl FromStr for BuiltinModel {
-    type Err = String;
+impl BuiltinModel {
+    pub fn get_model(&self) -> impl Model {
+        match self {
+            BuiltinModel::Uniform => UniformDistributionModel::new(DefaultSIM),
+        }
+    }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "uniform" => Ok(Self::Uniform),
-            _ => Err(format!("{} does not match any builtin model", s)),
+    pub fn get_parser(&self) -> impl Parser {
+        match self {
+            BuiltinModel::Uniform => ByteParser,
         }
     }
 }
@@ -44,29 +53,22 @@ impl Display for BuiltinModel {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum BuiltinOrCustomModel {
-    Builtin(BuiltinModel),
-    Custom(String),
+/// Custom models made by the user
+pub struct UserModel<SIM: SymbolIndexMapping> {
+    /// The model's name
+    name: String,
+    /// If it's a bit-model or byte-model
+    is_bit_model: bool,
+    /// The actual custom distribution
+    custom_distribution_model: CustomDistributionModel<SIM>,
 }
 
-impl FromStr for BuiltinOrCustomModel {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.parse::<BuiltinModel>() {
-            Ok(builtin) => Ok(Self::Builtin(builtin)),
-            // TODO: Later validate against an SQL table whether this custom model exists
-            Err(custom) => Ok(Self::Custom(custom)),
-        }
+impl<SIM: SymbolIndexMapping> UserModel<SIM> {
+    pub fn get_model(&mut self) -> &mut CustomDistributionModel<SIM> {
+        &mut self.custom_distribution_model
     }
-}
 
-impl Display for BuiltinOrCustomModel {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BuiltinOrCustomModel::Builtin(builtin) => write!(f, "{}", builtin),
-            BuiltinOrCustomModel::Custom(custom) => write!(f, "{}", custom),
-        }
+    pub fn from_name(_name: &str) -> Result<Self> {
+        todo!("Implement according to todo-features.txt")
     }
 }

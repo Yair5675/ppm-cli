@@ -144,6 +144,10 @@ where
                 debug!("Error: {}", e);
             }
         });
+    if let Err(e) = handle.flush() {
+        error!("Failed to flush output");
+        debug!("Error: {}", e);
+    }
 }
 
 /// Converts codec args to input bytes, parser and probability model.<br>

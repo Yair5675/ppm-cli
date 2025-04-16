@@ -18,13 +18,17 @@
 mod model_choice;
 
 use self::model_choice::{BuiltinModel, BuiltinOrCustomModel};
-use clap::{Parser, Subcommand};
+use crate::compressor::Compressor;
+use crate::models::{Model, ModelCfiError};
+use crate::parser::Parser;
+use clap::Subcommand;
+use log::{debug, error, info};
 use std::fs::File;
-use std::io::{BufReader, IsTerminal, Read};
+use std::io::{BufReader, IsTerminal, Read, Write};
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(Parser)]
+#[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
@@ -80,4 +84,54 @@ fn get_bytes_iterator(
         }
         Some(path) => Ok(Box::new(BufReader::new(File::open(path)?).bytes())),
     }
+}
+
+/// Handles a case where compressing a symbol fails
+fn handle_compression_error(compression_err: anyhow::Error) {
+    if let Some(ModelCfiError::UnsupportedSymbol(symbol)) = compression_err.downcast_ref() {
+        error!(
+            "A symbol not supported by the model ({}) was found. Skipping it",
+            symbol
+        );
+    } else {
+        error!("Failed to compress symbol; skipping it");
+        debug!("Compression error: {}", compression_err);
+    }
+}
+
+fn compress<I, P, M>(bytes: I, mut compressor: Compressor<M>, parser: P)
+where
+    I: Iterator<Item = Result<u8, std::io::Error>>,
+    P: Parser,
+    M: Model,
+{
+    info!("Compressing input stream. Unsupported or invalid symbols will be skipped");
+    // Since we'll perform many writes, get a handle to stdout in a buffer:
+    let stdout = std::io::stdout();
+    let mut handle = std::io::BufWriter::new(stdout);
+    bytes
+        // Filter bytes we can't read, parse those we can:
+        .filter_map(|result_byte| match result_byte {
+            Ok(b) => Some(parser.parse_byte(b)),
+            Err(e) => {
+                error!("Failed to read byte; skipping it");
+                debug!("IO Error: {}", e);
+                None
+            }
+        })
+        .flatten()
+        .flat_map(|symbol| match compressor.load_symbol(symbol) {
+            Ok(compressed_bytes) => Box::new(compressed_bytes),
+            Err(e) => {
+                handle_compression_error(e);
+                Box::new(std::iter::empty()) as Box<dyn Iterator<Item = u8>>
+            }
+        })
+        .for_each(|compressed_byte| {
+            // Output the data (log failures to write just in case):
+            if let Err(e) = handle.write(&[compressed_byte]) {
+                error!("Failed to output compressed byte");
+                debug!("Error: {}", e);
+            }
+        });
 }

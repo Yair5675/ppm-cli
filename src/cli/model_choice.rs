@@ -68,7 +68,7 @@ impl<SIM: SymbolIndexMapping> UserModel<SIM> {
         &mut self.custom_distribution_model
     }
 
-    pub fn from_name(_name: String) -> Result<Self> {
+    pub fn from_name(_name: &str) -> Result<Self> {
         todo!("Implement according to todo-features.txt")
     }
 }
